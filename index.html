@@ -2,31 +2,19 @@
 <html lang="en">
   <head>
 <style>
-  body {
-    background-image: 
-      repeating-linear-gradient(
-        -30deg,
-        rgba(0, 0, 0, 0.05) 0px,
-        rgba(0, 0, 0, 0.05) 1px,
-        transparent 1px,
-        transparent 150px
-      );
-  }
-
-  body::before {
-    content: "DEMO SITE   DEMO SITE   DEMO SITE   DEMO SITE   DEMO SITE   DEMO SITE";
+  .watermark-demo {
     position: fixed;
     top: 0;
-    left: -20%;
-    width: 200%;
-    height: 200%;
-    font-size: 70px;
-    font-weight: bold;
-    color: rgba(0, 0, 0, 0.05);
-    transform: rotate(-30deg);
-    white-space: nowrap;
+    left: 0;
+    width: 100%;
+    height: 100%;
     pointer-events: none;
-    z-index: 9999;
+    z-index: 999999;
+    background-image: url("data:image/svg+xml,\
+<svg xmlns='http://www.w3.org/2000/svg' width='300' height='200'>\
+<text x='0' y='100' fill='rgba(255,255,255,0.06)' font-size='40' font-weight='bold' transform='rotate(-30 150 100)'>DEMO SITE</text>\
+</svg>");
+    background-repeat: repeat;
   }
 </style>
     <meta charset="UTF-8" />
