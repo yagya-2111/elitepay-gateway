@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Shield, ArrowRight, Eye, EyeOff } from "lucide-react";
@@ -18,6 +18,13 @@ const AuthPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Redirect if already logged in
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) navigate("/dashboard", { replace: true });
+    });
+  }, [navigate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -26,7 +33,7 @@ const AuthPage = () => {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         toast({ title: "Login successful!", description: "Welcome back to ElitePay" });
-        navigate("/dashboard");
+        navigate("/dashboard", { replace: true });
       } else {
         const { error } = await supabase.auth.signUp({
           email,
@@ -35,7 +42,7 @@ const AuthPage = () => {
         });
         if (error) throw error;
         toast({ title: "Account created!", description: "Welcome to ElitePay" });
-        navigate("/dashboard");
+        navigate("/dashboard", { replace: true });
       }
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });

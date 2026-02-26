@@ -47,6 +47,45 @@ export type Database = {
         }
         Relationships: []
       }
+      deposits: {
+        Row: {
+          amount_inr: number | null
+          amount_usd: number
+          created_at: string
+          fund_type: string
+          id: string
+          payment_method: string
+          rate: number
+          screenshot_url: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount_inr?: number | null
+          amount_usd: number
+          created_at?: string
+          fund_type: string
+          id?: string
+          payment_method: string
+          rate: number
+          screenshot_url: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount_inr?: number | null
+          amount_usd?: number
+          created_at?: string
+          fund_type?: string
+          id?: string
+          payment_method?: string
+          rate?: number
+          screenshot_url?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       kyc_documents: {
         Row: {
           aadhaar_back_url: string
@@ -143,6 +182,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_balances: {
+        Row: {
+          created_at: string
+          id: string
+          inr_balance: number
+          updated_at: string
+          usdt_balance: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          inr_balance?: number
+          updated_at?: string
+          usdt_balance?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          inr_balance?: number
+          updated_at?: string
+          usdt_balance?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -158,6 +224,51 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      withdrawal_requests: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          fee_amount: string | null
+          fee_method: string | null
+          fee_screenshot_url: string | null
+          id: string
+          network: string | null
+          status: string
+          usdt_address: string | null
+          user_id: string
+          withdrawal_type: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency: string
+          fee_amount?: string | null
+          fee_method?: string | null
+          fee_screenshot_url?: string | null
+          id?: string
+          network?: string | null
+          status?: string
+          usdt_address?: string | null
+          user_id: string
+          withdrawal_type: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          fee_amount?: string | null
+          fee_method?: string | null
+          fee_screenshot_url?: string | null
+          id?: string
+          network?: string | null
+          status?: string
+          usdt_address?: string | null
+          user_id?: string
+          withdrawal_type?: string
         }
         Relationships: []
       }
