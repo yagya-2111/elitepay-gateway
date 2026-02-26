@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Tasa+Explorer:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=TASA+Explorer:wght@400..800&display=swap');
 
 @layer base {
   :root {
@@ -60,7 +60,7 @@
     font-family: 'Poppins', sans-serif;
   }
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Tasa Explorer', 'Poppins', sans-serif;
+    font-family: 'TASA Explorer', 'Poppins', sans-serif;
   }
 }
 

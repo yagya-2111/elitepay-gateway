@@ -15,7 +15,7 @@ export default {
     extend: {
       fontFamily: {
         sans: ['Poppins', 'sans-serif'],
-        display: ['Tasa Explorer', 'Poppins', 'sans-serif'],
+        display: ['TASA Explorer', 'Poppins', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
