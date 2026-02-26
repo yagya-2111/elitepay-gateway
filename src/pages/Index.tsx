@@ -7,6 +7,7 @@ import LiveTransactions from "@/components/LiveTransactions";
 import TrustSection from "@/components/TrustSection";
 import TransactionGraphSection from "@/components/TransactionGraphSection";
 import ExchangeHomepageSection from "@/components/ExchangeHomepageSection";
+import LiveExchangeTransactions from "@/components/LiveExchangeTransactions";
 import SupportSection from "@/components/SupportSection";
 import Footer from "@/components/Footer";
 
@@ -19,6 +20,7 @@ const Index = () => {
       <StatsSection />
       <WhyChooseSection />
       <ExchangeHomepageSection />
+      <LiveExchangeTransactions />
       <TransactionGraphSection />
       <LiveTransactions />
       <TrustSection />
