@@ -45,15 +45,15 @@ const LiveExchangeTransactions = () => {
   const [txns, setTxns] = useState<ExTxn[]>([]);
 
   useEffect(() => {
-    const initial = Array.from({ length: 10 }, (_, i) => generateExTxn(i));
+    const initial = Array.from({ length: 12 }, (_, i) => generateExTxn(i));
     setTxns(initial);
-    let counter = 10;
+    let counter = 12;
     const interval = setInterval(() => {
       setTxns((prev) => {
         const newTxn = generateExTxn(counter++);
-        return [newTxn, ...prev.slice(0, 9)];
+        return [newTxn, ...prev.slice(0, 11)];
       });
-    }, 4000);
+    }, 3000);
     return () => clearInterval(interval);
   }, []);
 
