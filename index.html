@@ -1,21 +1,32 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <style>
+<style>
+  body {
+    background-image: 
+      repeating-linear-gradient(
+        -30deg,
+        rgba(0, 0, 0, 0.05) 0px,
+        rgba(0, 0, 0, 0.05) 1px,
+        transparent 1px,
+        transparent 150px
+      );
+  }
+
   body::before {
-    content: "DEMO SITE   DEMO SITE   DEMO SITE   DEMO SITE   DEMO SITE";
+    content: "DEMO SITE   DEMO SITE   DEMO SITE   DEMO SITE   DEMO SITE   DEMO SITE";
     position: fixed;
-    top: 45%;
-    left: -10%;
+    top: 0;
+    left: -20%;
     width: 200%;
-    font-size: 80px;
+    height: 200%;
+    font-size: 70px;
     font-weight: bold;
-    color: rgba(255, 255, 255, 0.05);
+    color: rgba(0, 0, 0, 0.05);
     transform: rotate(-30deg);
     white-space: nowrap;
     pointer-events: none;
     z-index: 9999;
-    user-select: none;
   }
 </style>
     <meta charset="UTF-8" />
