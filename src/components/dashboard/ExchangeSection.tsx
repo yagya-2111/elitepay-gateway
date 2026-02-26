@@ -7,7 +7,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { AlertTriangle, Upload, Copy, ArrowRightLeft } from "lucide-react";
 
 const USDT_ADDRESS = "TYud5LurN9hn16yy5K4gMiyLHpNJRa93C6";
-const UPI_ID = "sahilkhan122@ptaxis";
 
 const FUND_RATES: Record<string, { label: string; rate: number; color: string }> = {
   pure: { label: "Pure Fund", rate: 98, color: "text-primary" },
@@ -121,14 +120,9 @@ const ExchangeSection = ({ userId }: ExchangeSectionProps) => {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-3">
-              <Button onClick={() => openPayment("usdt")} className="bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20">
-                Pay via USDT
-              </Button>
-              <Button onClick={() => openPayment("inr")} className="bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20">
-                Pay via UPI
-              </Button>
-            </div>
+            <Button onClick={() => openPayment("usdt")} className="w-full bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20">
+              Pay via USDT (TRC20)
+            </Button>
           </div>
         )}
       </div>
@@ -138,38 +132,25 @@ const ExchangeSection = ({ userId }: ExchangeSectionProps) => {
         <DialogContent className="bg-card border-border max-w-lg">
           <DialogHeader>
             <DialogTitle className="text-foreground font-display">
-              Pay {method === "usdt" ? `$${amountNum} via USDT (TRC20)` : `₹${(amountNum * rate).toLocaleString("en-IN")} via UPI`}
+              Pay ${amountNum} via USDT (TRC20)
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            {method === "usdt" ? (
-              <div className="bg-secondary/50 rounded-lg p-4 text-center">
-                <img src="/images/usdt-qr.png" alt="USDT QR" className="w-40 h-40 mx-auto mb-3 rounded-lg" />
-                <p className="text-xs text-muted-foreground mb-2">USDT TRC20 Address</p>
-                <div className="flex items-center justify-center gap-2">
-                  <code className="text-xs text-foreground bg-background px-2 py-1 rounded break-all">{USDT_ADDRESS}</code>
-                  <button onClick={() => { navigator.clipboard.writeText(USDT_ADDRESS); toast({ title: "Copied!" }); }}>
-                    <Copy className="w-4 h-4 text-primary" />
-                  </button>
-                </div>
+            <div className="bg-secondary/50 rounded-lg p-4 text-center">
+              <img src="/images/usdt-qr.png" alt="USDT QR" className="w-40 h-40 mx-auto mb-3 rounded-lg" />
+              <p className="text-xs text-muted-foreground mb-2">USDT TRC20 Address</p>
+              <div className="flex items-center justify-center gap-2">
+                <code className="text-xs text-foreground bg-background px-2 py-1 rounded break-all">{USDT_ADDRESS}</code>
+                <button onClick={() => { navigator.clipboard.writeText(USDT_ADDRESS); toast({ title: "Copied!" }); }}>
+                  <Copy className="w-4 h-4 text-primary" />
+                </button>
               </div>
-            ) : (
-              <div className="bg-secondary/50 rounded-lg p-4 text-center">
-                <img src="/images/upi-qr.png" alt="UPI QR" className="w-40 h-40 mx-auto mb-3 rounded-lg" />
-                <p className="text-xs text-muted-foreground mb-2">UPI ID</p>
-                <div className="flex items-center justify-center gap-2">
-                  <code className="text-foreground font-mono">{UPI_ID}</code>
-                  <button onClick={() => { navigator.clipboard.writeText(UPI_ID); toast({ title: "Copied!" }); }}>
-                    <Copy className="w-4 h-4 text-primary" />
-                  </button>
-                </div>
-              </div>
-            )}
+            </div>
 
             <div className="flex items-center gap-2 p-3 rounded-lg bg-warning/10 border border-warning/20">
               <AlertTriangle className="w-5 h-5 text-warning flex-shrink-0" />
               <p className="text-xs text-warning">
-                Deposit exactly {method === "usdt" ? `$${amountNum}` : `₹${(amountNum * rate).toLocaleString("en-IN")}`}. Any other amount will not be processed.
+                Deposit exactly ${amountNum}. Any other amount will not be processed.
               </p>
             </div>
 
