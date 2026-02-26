@@ -51,7 +51,7 @@ const AuthPage = () => {
         {/* Description side */}
         <div className={`flex flex-col justify-center ${isLogin ? "lg:order-2" : "lg:order-1"} animate-fade-in-up`}>
           <div className="flex items-center gap-2 mb-6">
-            <Shield className="w-10 h-10 text-primary" />
+            <img src="/images/elitepay-logo.png" alt="ElitePay" className="w-12 h-12 object-contain" />
             <span className="text-2xl font-display font-bold text-gradient">ElitePay</span>
           </div>
           {isLogin ? (
