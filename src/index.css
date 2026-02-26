@@ -89,10 +89,10 @@
 }
 
 @keyframes float-inr {
-  0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.08; }
-  25% { transform: translateY(-30px) rotate(5deg); opacity: 0.15; }
-  50% { transform: translateY(-15px) rotate(-3deg); opacity: 0.1; }
-  75% { transform: translateY(-25px) rotate(2deg); opacity: 0.12; }
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-30px) rotate(5deg); }
+  50% { transform: translateY(-15px) rotate(-3deg); }
+  75% { transform: translateY(-25px) rotate(2deg); }
 }
 
 @keyframes pulse-glow {

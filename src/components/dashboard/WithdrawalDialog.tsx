@@ -30,7 +30,11 @@ const WithdrawalDialog = ({ open, onClose, fundType, userId }: WithdrawalDialogP
   const fileRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  const handleOpen = () => {
+  // Reset all state whenever dialog opens or closes
+  const handleOpenChange = (isOpen: boolean) => {
+    if (!isOpen) {
+      onClose();
+    }
     setStep("plans");
     setSelectedPlan(null);
     setMethod(null);
@@ -113,7 +117,7 @@ const WithdrawalDialog = ({ open, onClose, fundType, userId }: WithdrawalDialogP
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); else handleOpen(); }}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="bg-card border-border max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-foreground font-display">
