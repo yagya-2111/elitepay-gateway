@@ -13,7 +13,7 @@ const Footer = () => {
             <p className="text-muted-foreground text-sm leading-relaxed">
               India's most trusted payment gateway. Secure, fast, and reliable payment solutions for businesses of all sizes.
             </p>
-            <p className="text-muted-foreground text-xs mt-4">For educational purposes only.</p>
+  
           </div>
           <div>
             <h4 className="text-foreground font-display font-semibold mb-4">Quick Links</h4>
@@ -48,7 +48,7 @@ const Footer = () => {
         </div>
         <div className="border-t border-border/50 pt-6 text-center">
           <p className="text-muted-foreground text-xs">
-            © 2024 ElitePay. All rights reserved. | For Educational Purposes Only
+            © 2024 ElitePay. All rights reserved. 
           </p>
         </div>
       </div>
