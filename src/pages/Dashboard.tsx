@@ -67,10 +67,6 @@ const Dashboard = () => {
               <IndianRupee className="w-4 h-4 sm:mr-1" />
               <span className="hidden sm:inline">INR Withdraw</span>
             </TabsTrigger>
-            <TabsTrigger value="inr-withdraw" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs px-2 py-1.5">
-              <IndianRupee className="w-4 h-4 sm:mr-1" />
-              <span className="hidden sm:inline">INR</span>
-            </TabsTrigger>
             <TabsTrigger value="bank" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs px-2 py-1.5">
               <Building2 className="w-4 h-4 sm:mr-1" />
               <span className="hidden sm:inline">Bank</span>
