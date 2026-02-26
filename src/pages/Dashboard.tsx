@@ -8,10 +8,9 @@ import BankAccountSection from "@/components/dashboard/BankAccountSection";
 import ProfileSection from "@/components/dashboard/ProfileSection";
 import KYCSection from "@/components/dashboard/KYCSection";
 import ExchangeSection from "@/components/dashboard/ExchangeSection";
-import UsdtWithdrawalSection from "@/components/dashboard/UsdtWithdrawalSection";
 import InrWithdrawalSection from "@/components/dashboard/InrWithdrawalSection";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Wallet, Building2, ArrowRightLeft, ArrowDownToLine, IndianRupee } from "lucide-react";
+import { User, Wallet, Building2, ArrowRightLeft, IndianRupee } from "lucide-react";
 
 const Dashboard = () => {
   const [user, setUser] = useState<any>(null);
@@ -64,9 +63,9 @@ const Dashboard = () => {
               <ArrowRightLeft className="w-4 h-4 sm:mr-1" />
               <span className="hidden sm:inline">Exchange</span>
             </TabsTrigger>
-            <TabsTrigger value="usdt-withdraw" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs px-2 py-1.5">
-              <ArrowDownToLine className="w-4 h-4 sm:mr-1" />
-              <span className="hidden sm:inline">USDT</span>
+            <TabsTrigger value="inr-withdraw" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs px-2 py-1.5">
+              <IndianRupee className="w-4 h-4 sm:mr-1" />
+              <span className="hidden sm:inline">INR Withdraw</span>
             </TabsTrigger>
             <TabsTrigger value="inr-withdraw" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs px-2 py-1.5">
               <IndianRupee className="w-4 h-4 sm:mr-1" />
@@ -85,9 +84,6 @@ const Dashboard = () => {
           </TabsContent>
           <TabsContent value="exchange">
             <ExchangeSection userId={user.id} />
-          </TabsContent>
-          <TabsContent value="usdt-withdraw">
-            <UsdtWithdrawalSection userId={user.id} />
           </TabsContent>
           <TabsContent value="inr-withdraw">
             <InrWithdrawalSection userId={user.id} />
