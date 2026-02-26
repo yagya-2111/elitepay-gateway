@@ -39,24 +39,27 @@ const Dashboard = () => {
     <div className="min-h-screen bg-background relative">
       <FloatingINR />
       <Navbar />
-      <div className="pt-20 pb-10 max-w-6xl mx-auto px-4 relative z-10">
-        <div className="mb-8">
-          <h1 className="text-3xl font-display font-bold text-foreground">
+      <div className="pt-20 pb-10 max-w-6xl mx-auto px-3 sm:px-4 relative z-10">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-xl sm:text-3xl font-display font-bold text-foreground truncate">
             Welcome, <span className="text-gradient">{profile?.name || user.email}</span>
           </h1>
-          <p className="text-muted-foreground mt-1">Manage your funds, bank accounts & KYC</p>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">Manage your funds, bank accounts & KYC</p>
         </div>
 
         <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="bg-secondary border border-border mb-8">
-            <TabsTrigger value="profile" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              <User className="w-4 h-4 mr-2" /> Profile
+          <TabsList className="bg-secondary border border-border mb-6 sm:mb-8 w-full sm:w-auto">
+            <TabsTrigger value="profile" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm px-2 sm:px-3">
+              <User className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Profile</span>
             </TabsTrigger>
-            <TabsTrigger value="funds" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              <Wallet className="w-4 h-4 mr-2" /> Funds
+            <TabsTrigger value="funds" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm px-2 sm:px-3">
+              <Wallet className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Funds</span>
             </TabsTrigger>
-            <TabsTrigger value="bank" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              <Building2 className="w-4 h-4 mr-2" /> Bank & KYC
+            <TabsTrigger value="bank" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm px-2 sm:px-3">
+              <Building2 className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Bank & KYC</span>
             </TabsTrigger>
           </TabsList>
           <TabsContent value="profile">

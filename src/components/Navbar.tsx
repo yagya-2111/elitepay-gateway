@@ -42,23 +42,26 @@ const Navbar = () => {
           <img src="/images/elitepay-logo.png" alt="ElitePay" className="w-10 h-10 object-contain" />
           <span className="text-xl font-display font-bold text-gradient">ElitePay</span>
         </Link>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1 sm:gap-3">
           {user ? (
             <>
-              <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")} className="text-muted-foreground hover:text-foreground">
-                <User className="w-4 h-4 mr-1" /> Dashboard
+              <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")} className="text-muted-foreground hover:text-foreground px-2 sm:px-3">
+                <User className="w-4 h-4 sm:mr-1" />
+                <span className="hidden sm:inline">Dashboard</span>
               </Button>
               {isAdmin && (
-                <Button variant="ghost" size="sm" onClick={() => navigate("/admin")} className="text-primary hover:text-primary">
-                  <LayoutDashboard className="w-4 h-4 mr-1" /> Admin
+                <Button variant="ghost" size="sm" onClick={() => navigate("/admin")} className="text-primary hover:text-primary px-2 sm:px-3">
+                  <LayoutDashboard className="w-4 h-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Admin</span>
                 </Button>
               )}
-              <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground hover:text-destructive">
-                <LogOut className="w-4 h-4 mr-1" /> Logout
+              <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground hover:text-destructive px-2 sm:px-3">
+                <LogOut className="w-4 h-4 sm:mr-1" />
+                <span className="hidden sm:inline">Logout</span>
               </Button>
             </>
           ) : (
-            <Button onClick={() => navigate("/auth")} className="bg-primary text-primary-foreground hover:bg-primary/90">
+            <Button onClick={() => navigate("/auth")} className="bg-primary text-primary-foreground hover:bg-primary/90 text-sm px-3 sm:px-4">
               Start Earning
             </Button>
           )}

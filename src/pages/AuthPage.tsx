@@ -48,8 +48,8 @@ const AuthPage = () => {
     <div className="min-h-screen bg-background relative flex items-center justify-center">
       <FloatingINR />
       <div className="max-w-5xl w-full mx-auto px-4 grid grid-cols-1 lg:grid-cols-2 gap-8 relative z-10">
-        {/* Description side */}
-        <div className={`flex flex-col justify-center ${isLogin ? "lg:order-2" : "lg:order-1"} animate-fade-in-up`}>
+        {/* Description side - hidden on mobile */}
+        <div className={`hidden lg:flex flex-col justify-center ${isLogin ? "lg:order-2" : "lg:order-1"} animate-fade-in-up`}>
           <div className="flex items-center gap-2 mb-6">
             <img src="/images/elitepay-logo.png" alt="ElitePay" className="w-12 h-12 object-contain" />
             <span className="text-2xl font-display font-bold text-gradient">ElitePay</span>
