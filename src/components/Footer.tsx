@@ -7,7 +7,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-12">
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <Shield className="w-7 h-7 text-primary" />
+              <img src="/images/elitepay-logo.png" alt="ElitePay" className="w-10 h-10 object-contain" />
               <span className="text-xl font-display font-bold text-gradient">ElitePay</span>
             </div>
             <p className="text-muted-foreground text-sm leading-relaxed">

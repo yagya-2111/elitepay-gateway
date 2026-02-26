@@ -9,6 +9,9 @@ const HeroSection = () => {
     <section className="relative min-h-screen flex items-center justify-center bg-gradient-hero bg-blue-glow pt-16 overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
         <div className="animate-fade-in-up">
+          <div className="flex justify-center mb-8">
+            <img src="/images/elitepay-logo.png" alt="ElitePay Official" className="w-24 h-24 object-contain animate-pulse-glow rounded-2xl" />
+          </div>
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-8">
             <Zap className="w-4 h-4 text-primary" />
             <span className="text-sm text-primary font-medium">India's #1 Trusted Payment Gateway</span>

@@ -47,6 +47,36 @@ export type Database = {
         }
         Relationships: []
       }
+      kyc_documents: {
+        Row: {
+          aadhaar_back_url: string
+          aadhaar_front_url: string
+          created_at: string
+          id: string
+          pan_card_url: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          aadhaar_back_url: string
+          aadhaar_front_url: string
+          created_at?: string
+          id?: string
+          pan_card_url: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          aadhaar_back_url?: string
+          aadhaar_front_url?: string
+          created_at?: string
+          id?: string
+          pan_card_url?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       payment_screenshots: {
         Row: {
           amount: string

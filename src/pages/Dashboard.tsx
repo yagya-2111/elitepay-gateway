@@ -6,8 +6,9 @@ import FloatingINR from "@/components/FloatingINR";
 import FundsSection from "@/components/dashboard/FundsSection";
 import BankAccountSection from "@/components/dashboard/BankAccountSection";
 import ProfileSection from "@/components/dashboard/ProfileSection";
+import KYCSection from "@/components/dashboard/KYCSection";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Wallet, Building2 } from "lucide-react";
+import { User, Wallet, Building2, ShieldCheck } from "lucide-react";
 
 const Dashboard = () => {
   const [user, setUser] = useState<any>(null);
@@ -16,17 +17,11 @@ const Dashboard = () => {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) {
-        navigate("/auth");
-        return;
-      }
+      if (!session) { navigate("/auth"); return; }
       setUser(session.user);
     });
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
-        navigate("/auth");
-        return;
-      }
+      if (!session) { navigate("/auth"); return; }
       setUser(session.user);
       fetchProfile(session.user.id);
     });
@@ -49,7 +44,7 @@ const Dashboard = () => {
           <h1 className="text-3xl font-display font-bold text-foreground">
             Welcome, <span className="text-gradient">{profile?.name || user.email}</span>
           </h1>
-          <p className="text-muted-foreground mt-1">Manage your funds and bank accounts</p>
+          <p className="text-muted-foreground mt-1">Manage your funds, bank accounts & KYC</p>
         </div>
 
         <Tabs defaultValue="profile" className="w-full">
@@ -58,10 +53,10 @@ const Dashboard = () => {
               <User className="w-4 h-4 mr-2" /> Profile
             </TabsTrigger>
             <TabsTrigger value="funds" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              <Wallet className="w-4 h-4 mr-2" /> Funds Available
+              <Wallet className="w-4 h-4 mr-2" /> Funds
             </TabsTrigger>
             <TabsTrigger value="bank" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              <Building2 className="w-4 h-4 mr-2" /> Bank Accounts
+              <Building2 className="w-4 h-4 mr-2" /> Bank & KYC
             </TabsTrigger>
           </TabsList>
           <TabsContent value="profile">
@@ -71,7 +66,10 @@ const Dashboard = () => {
             <FundsSection userId={user.id} />
           </TabsContent>
           <TabsContent value="bank">
-            <BankAccountSection userId={user.id} />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <BankAccountSection userId={user.id} />
+              <KYCSection userId={user.id} />
+            </div>
           </TabsContent>
         </Tabs>
       </div>
