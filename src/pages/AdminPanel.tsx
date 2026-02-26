@@ -36,7 +36,6 @@ const AdminPanel = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [editBalance, setEditBalance] = useState<any>(null);
   const [editInr, setEditInr] = useState("");
-  const [editUsdt, setEditUsdt] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -92,7 +91,6 @@ const AdminPanel = () => {
     if (!editBalance) return;
     const { error } = await (supabase.from as any)("user_balances").update({
       inr_balance: parseFloat(editInr) || 0,
-      usdt_balance: parseFloat(editUsdt) || 0,
     }).eq("id", editBalance.id);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -265,14 +263,17 @@ const AdminPanel = () => {
         {/* BALANCES */}
         {activeTab === "balances" && (
           <div className="space-y-4">
+            <div className="glass-card p-4 shadow-card mb-2">
+              <p className="text-muted-foreground text-sm">Total Users: <span className="text-primary font-bold">{balances.length}</span></p>
+            </div>
             {balances.map((b) => (
               <div key={b.id} className="glass-card p-4 sm:p-5 shadow-card">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <p className="text-foreground font-medium truncate">User: <span className="text-primary">{getUserName(b.user_id)}</span></p>
-                    <p className="text-sm text-muted-foreground">INR: ₹{Number(b.inr_balance).toLocaleString("en-IN")} | USDT: ${Number(b.usdt_balance).toFixed(2)}</p>
+                    <p className="text-sm text-muted-foreground">INR Balance: ₹{Number(b.inr_balance).toLocaleString("en-IN")}</p>
                   </div>
-                  <Button size="sm" onClick={() => { setEditBalance(b); setEditInr(String(b.inr_balance)); setEditUsdt(String(b.usdt_balance)); }} className="bg-primary/10 text-primary hover:bg-primary/20">
+                  <Button size="sm" onClick={() => { setEditBalance(b); setEditInr(String(b.inr_balance)); }} className="bg-primary/10 text-primary hover:bg-primary/20">
                     <Edit2 className="w-4 h-4 mr-1" /> Edit
                   </Button>
                 </div>
@@ -311,9 +312,12 @@ const AdminPanel = () => {
         {/* USERS */}
         {activeTab === "users" && (
           <div className="space-y-4">
-            {users.map((u) => (
+            <div className="glass-card p-4 shadow-card mb-2">
+              <p className="text-muted-foreground text-sm">Total Users: <span className="text-primary font-bold">{users.length}</span></p>
+            </div>
+            {users.map((u, index) => (
               <div key={u.id} className="glass-card p-4 sm:p-5 shadow-card">
-                <p className="text-foreground font-medium">{u.name}</p>
+                <p className="text-foreground font-medium"><span className="text-muted-foreground mr-2">#{index + 1}</span>{u.name}</p>
                 <p className="text-sm text-muted-foreground">{u.email} | {u.phone}</p>
                 <p className="text-xs text-muted-foreground">Joined: {new Date(u.created_at).toLocaleDateString()}</p>
               </div>
@@ -339,17 +343,13 @@ const AdminPanel = () => {
       <Dialog open={!!editBalance} onOpenChange={(o) => { if (!o) setEditBalance(null); }}>
         <DialogContent className="bg-card border-border">
           <DialogHeader>
-            <DialogTitle className="text-foreground font-display">Edit User Balance</DialogTitle>
+            <DialogTitle className="text-foreground font-display">Edit INR Balance</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">User: <span className="text-primary">{editBalance && getUserName(editBalance.user_id)}</span></p>
             <div>
               <label className="text-sm text-muted-foreground block mb-1">INR Balance</label>
               <Input value={editInr} onChange={(e) => setEditInr(e.target.value)} type="number" className="bg-secondary border-border" />
-            </div>
-            <div>
-              <label className="text-sm text-muted-foreground block mb-1">USDT Balance</label>
-              <Input value={editUsdt} onChange={(e) => setEditUsdt(e.target.value)} type="number" className="bg-secondary border-border" />
             </div>
             <Button onClick={saveBalance} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">Save Balance</Button>
           </div>
