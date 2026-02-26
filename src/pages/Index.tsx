@@ -6,6 +6,7 @@ import WhyChooseSection from "@/components/WhyChooseSection";
 import LiveTransactions from "@/components/LiveTransactions";
 import TrustSection from "@/components/TrustSection";
 import TransactionGraphSection from "@/components/TransactionGraphSection";
+import SupportSection from "@/components/SupportSection";
 import Footer from "@/components/Footer";
 
 const Index = () => {
@@ -19,6 +20,7 @@ const Index = () => {
       <TransactionGraphSection />
       <LiveTransactions />
       <TrustSection />
+      <SupportSection />
       <Footer />
     </div>
   );
