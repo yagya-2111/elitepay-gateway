@@ -4,7 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { AlertTriangle, Upload, Copy, IndianRupee } from "lucide-react";
+import { AlertTriangle, Upload, Copy, IndianRupee, Clock, CheckCircle2, XCircle } from "lucide-react";
 
 const UPI_ID = "sahilkhan122@ptaxis";
 const USDT_ADDRESS = "TYud5LurN9hn16yy5K4gMiyLHpNJRa93C6";
@@ -19,13 +19,18 @@ const InrWithdrawalSection = ({ userId }: InrWithdrawalSectionProps) => {
   const [feeDialog, setFeeDialog] = useState(false);
   const [feeMethod, setFeeMethod] = useState<"usdt" | "inr" | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [withdrawals, setWithdrawals] = useState<any[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  useEffect(() => {
+  const fetchData = () => {
     (supabase.from as any)("user_balances").select("inr_balance").eq("user_id", userId).single()
       .then(({ data }: any) => { if (data) setBalance(Number(data.inr_balance)); });
-  }, [userId]);
+    (supabase.from as any)("withdrawal_requests").select("*").eq("user_id", userId).eq("withdrawal_type", "inr").order("created_at", { ascending: false })
+      .then(({ data }: any) => { if (data) setWithdrawals(data); });
+  };
+
+  useEffect(() => { fetchData(); }, [userId]);
 
   const handleWithdraw = () => {
     const amt = parseFloat(amount);
@@ -63,6 +68,7 @@ const InrWithdrawalSection = ({ userId }: InrWithdrawalSectionProps) => {
       setFeeDialog(false);
       setFeeMethod(null);
       setAmount("");
+      fetchData();
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
@@ -153,6 +159,33 @@ const InrWithdrawalSection = ({ userId }: InrWithdrawalSectionProps) => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Withdrawal History */}
+      {withdrawals.length > 0 && (
+        <div className="glass-card p-6 shadow-card">
+          <h3 className="text-lg font-display font-bold text-foreground mb-4">Withdrawal History</h3>
+          <div className="space-y-3">
+            {withdrawals.map((w) => (
+              <div key={w.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 border border-border/50">
+                <div>
+                  <p className="text-foreground font-medium">₹{Number(w.amount).toLocaleString("en-IN")}</p>
+                  <p className="text-xs text-muted-foreground">{new Date(w.created_at).toLocaleString()}</p>
+                </div>
+                <span className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                  w.status === "confirmed" ? "bg-success/10 text-success" :
+                  w.status === "rejected" ? "bg-destructive/10 text-destructive" :
+                  "bg-warning/10 text-warning"
+                }`}>
+                  {w.status === "confirmed" ? <CheckCircle2 className="w-3 h-3" /> :
+                   w.status === "rejected" ? <XCircle className="w-3 h-3" /> :
+                   <Clock className="w-3 h-3" />}
+                  {w.status}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

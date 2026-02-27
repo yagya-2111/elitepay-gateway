@@ -11,6 +11,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 type TabType = "payments" | "kyc" | "users" | "banks" | "deposits" | "withdrawals" | "balances";
+const WITHDRAWAL_STATUSES = ["pending", "confirmed", "rejected"] as const;
 
 const TABS: { value: TabType; label: string; icon: any }[] = [
   { value: "payments", label: "Payments", icon: Image },
@@ -36,6 +37,10 @@ const AdminPanel = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [editBalance, setEditBalance] = useState<any>(null);
   const [editInr, setEditInr] = useState("");
+  const [fakeWithdrawal, setFakeWithdrawal] = useState(false);
+  const [fakeUserId, setFakeUserId] = useState("");
+  const [fakeAmount, setFakeAmount] = useState("");
+  const [fakeStatus, setFakeStatus] = useState("confirmed");
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -97,6 +102,32 @@ const AdminPanel = () => {
     } else {
       toast({ title: "Balance updated!" });
       setEditBalance(null);
+      fetchAll();
+    }
+  };
+
+  const addFakeWithdrawal = async () => {
+    if (!fakeUserId || !fakeAmount) {
+      toast({ title: "Select user and enter amount", variant: "destructive" });
+      return;
+    }
+    const { error } = await (supabase.from as any)("withdrawal_requests").insert({
+      user_id: fakeUserId,
+      withdrawal_type: "inr",
+      amount: parseFloat(fakeAmount),
+      currency: "INR",
+      status: fakeStatus,
+      fee_amount: "₹2,000",
+      fee_method: "inr",
+    });
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Withdrawal entry added!" });
+      setFakeWithdrawal(false);
+      setFakeUserId("");
+      setFakeAmount("");
+      setFakeStatus("confirmed");
       fetchAll();
     }
   };
@@ -237,6 +268,9 @@ const AdminPanel = () => {
         {/* WITHDRAWALS */}
         {activeTab === "withdrawals" && (
           <div className="space-y-4">
+            <Button onClick={() => setFakeWithdrawal(true)} className="bg-primary text-primary-foreground hover:bg-primary/90">
+              + Add Withdrawal Entry
+            </Button>
             {withdrawals.map((w) => (
               <div key={w.id} className="glass-card p-4 sm:p-5 shadow-card">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -352,6 +386,38 @@ const AdminPanel = () => {
               <Input value={editInr} onChange={(e) => setEditInr(e.target.value)} type="number" className="bg-secondary border-border" />
             </div>
             <Button onClick={saveBalance} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">Save Balance</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Fake Withdrawal Dialog */}
+      <Dialog open={fakeWithdrawal} onOpenChange={(o) => { if (!o) setFakeWithdrawal(false); }}>
+        <DialogContent className="bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="text-foreground font-display">Add Withdrawal Entry</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm text-muted-foreground block mb-1">Select User</label>
+              <select value={fakeUserId} onChange={(e) => setFakeUserId(e.target.value)} className="w-full rounded-lg bg-secondary border border-border p-2 text-foreground text-sm">
+                <option value="">-- Select User --</option>
+                {users.map((u) => (
+                  <option key={u.user_id} value={u.user_id}>{u.name || u.email}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-sm text-muted-foreground block mb-1">Amount (INR)</label>
+              <Input value={fakeAmount} onChange={(e) => setFakeAmount(e.target.value)} type="number" placeholder="Enter INR amount" className="bg-secondary border-border" />
+            </div>
+            <div>
+              <label className="text-sm text-muted-foreground block mb-1">Status</label>
+              <select value={fakeStatus} onChange={(e) => setFakeStatus(e.target.value)} className="w-full rounded-lg bg-secondary border border-border p-2 text-foreground text-sm">
+                <option value="pending">Pending</option>
+                <option value="confirmed">Confirmed</option>
+              </select>
+            </div>
+            <Button onClick={addFakeWithdrawal} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">Add Entry</Button>
           </div>
         </DialogContent>
       </Dialog>
