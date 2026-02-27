@@ -41,6 +41,7 @@ const AdminPanel = () => {
   const [fakeUserId, setFakeUserId] = useState("");
   const [fakeAmount, setFakeAmount] = useState("");
   const [fakeStatus, setFakeStatus] = useState("confirmed");
+  const [fakeDate, setFakeDate] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -111,7 +112,7 @@ const AdminPanel = () => {
       toast({ title: "Select user and enter amount", variant: "destructive" });
       return;
     }
-    const { error } = await (supabase.from as any)("withdrawal_requests").insert({
+    const insertData: any = {
       user_id: fakeUserId,
       withdrawal_type: "inr",
       amount: parseFloat(fakeAmount),
@@ -119,7 +120,9 @@ const AdminPanel = () => {
       status: fakeStatus,
       fee_amount: "₹2,000",
       fee_method: "inr",
-    });
+    };
+    if (fakeDate) insertData.created_at = new Date(fakeDate).toISOString();
+    const { error } = await (supabase.from as any)("withdrawal_requests").insert(insertData);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
@@ -128,6 +131,7 @@ const AdminPanel = () => {
       setFakeUserId("");
       setFakeAmount("");
       setFakeStatus("confirmed");
+      setFakeDate("");
       fetchAll();
     }
   };
@@ -416,6 +420,10 @@ const AdminPanel = () => {
                 <option value="pending">Pending</option>
                 <option value="confirmed">Confirmed</option>
               </select>
+            </div>
+            <div>
+              <label className="text-sm text-muted-foreground block mb-1">Date & Time (optional)</label>
+              <Input value={fakeDate} onChange={(e) => setFakeDate(e.target.value)} type="datetime-local" className="bg-secondary border-border" />
             </div>
             <Button onClick={addFakeWithdrawal} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">Add Entry</Button>
           </div>
