@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import FloatingINR from "@/components/FloatingINR";
-import { Users, Image, Building2, CheckCircle2, XCircle, ShieldCheck, Menu, ArrowRightLeft, ArrowDownToLine, Wallet, Edit2 } from "lucide-react";
+import { Users, Image, Building2, CheckCircle2, XCircle, ShieldCheck, Menu, ArrowRightLeft, ArrowDownToLine, Wallet, Edit2, Shield, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -32,6 +32,7 @@ const AdminPanel = () => {
   const [deposits, setDeposits] = useState<any[]>([]);
   const [withdrawals, setWithdrawals] = useState<any[]>([]);
   const [balances, setBalances] = useState<any[]>([]);
+  const [userRoles, setUserRoles] = useState<any[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -59,7 +60,7 @@ const AdminPanel = () => {
 
   const fetchAll = async () => {
     setLoading(true);
-    const [profilesRes, paymentsRes, banksRes, kycRes, depositsRes, withdrawalsRes, balancesRes] = await Promise.all([
+    const [profilesRes, paymentsRes, banksRes, kycRes, depositsRes, withdrawalsRes, balancesRes, rolesRes] = await Promise.all([
       supabase.from("profiles").select("*"),
       supabase.from("payment_screenshots").select("*").order("created_at", { ascending: false }),
       supabase.from("bank_accounts").select("*"),
@@ -67,6 +68,7 @@ const AdminPanel = () => {
       supabase.from("deposits" as any).select("*").order("created_at", { ascending: false }),
       supabase.from("withdrawal_requests" as any).select("*").order("created_at", { ascending: false }),
       supabase.from("user_balances" as any).select("*"),
+      supabase.from("user_roles").select("*"),
     ]);
     setUsers(profilesRes.data || []);
     setPayments(paymentsRes.data || []);
@@ -75,6 +77,7 @@ const AdminPanel = () => {
     setDeposits(depositsRes.data || []);
     setWithdrawals(withdrawalsRes.data || []);
     setBalances(balancesRes.data || []);
+    setUserRoles(rolesRes.data || []);
     setLoading(false);
   };
 
@@ -150,6 +153,20 @@ const AdminPanel = () => {
       "bg-warning/10 text-warning"
     }`}>{status}</span>
   );
+
+  const RoleBadge = ({ role }: { role: string }) => {
+    const cls = role === "super_admin"
+      ? "bg-amber-500/15 text-amber-500 border border-amber-500/30"
+      : role === "admin"
+        ? "bg-primary/15 text-primary border border-primary/30"
+        : "bg-muted text-muted-foreground border border-border";
+    const icon = role === "super_admin" ? <Crown className="w-3 h-3" /> : role === "admin" ? <Shield className="w-3 h-3" /> : null;
+    return (
+      <span className={`px-2 py-0.5 rounded-full text-xs font-medium inline-flex items-center gap-1 ${cls}`}>{icon}{role}</span>
+    );
+  };
+
+  const getUserRolesList = (userId: string) => userRoles.filter(r => r.user_id === userId).map(r => r.role);
 
   const ApproveReject = ({ id, table, status }: { id: string; table: string; status: string }) => (
     status === "pending" ? (
@@ -355,7 +372,10 @@ const AdminPanel = () => {
             </div>
             {users.map((u, index) => (
               <div key={u.id} className="glass-card p-4 sm:p-5 shadow-card">
-                <p className="text-foreground font-medium"><span className="text-muted-foreground mr-2">#{index + 1}</span>{u.name}</p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-foreground font-medium"><span className="text-muted-foreground mr-2">#{index + 1}</span>{u.name}</p>
+                  {getUserRolesList(u.user_id).map(r => <RoleBadge key={r} role={r} />)}
+                </div>
                 <p className="text-sm text-muted-foreground">{u.email} | {u.phone}</p>
                 <p className="text-xs text-muted-foreground">Joined: {new Date(u.created_at).toLocaleDateString()}</p>
               </div>

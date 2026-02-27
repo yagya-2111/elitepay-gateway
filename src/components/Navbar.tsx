@@ -1,13 +1,14 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Shield, LogOut, User, LayoutDashboard } from "lucide-react";
+import { Shield, LogOut, User, LayoutDashboard, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -16,6 +17,7 @@ const Navbar = () => {
         checkAdmin(session.user.id);
       } else {
         setIsAdmin(false);
+        setIsSuperAdmin(false);
       }
     });
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -26,8 +28,10 @@ const Navbar = () => {
   }, []);
 
   const checkAdmin = async (userId: string) => {
-    const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId).eq("role", "admin");
-    setIsAdmin(data && data.length > 0);
+    const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+    const roles = (data || []).map(r => r.role);
+    setIsAdmin(roles.includes("admin") || roles.includes("super_admin"));
+    setIsSuperAdmin(roles.includes("super_admin"));
   };
 
   const handleLogout = async () => {
@@ -53,6 +57,12 @@ const Navbar = () => {
                 <Button variant="ghost" size="sm" onClick={() => navigate("/admin")} className="text-primary hover:text-primary px-2 sm:px-3">
                   <LayoutDashboard className="w-4 h-4 sm:mr-1" />
                   <span className="hidden sm:inline">Admin</span>
+                </Button>
+              )}
+              {isSuperAdmin && (
+                <Button variant="ghost" size="sm" onClick={() => navigate("/super-admin")} className="text-amber-500 hover:text-amber-500 px-2 sm:px-3">
+                  <Crown className="w-4 h-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Super Admin</span>
                 </Button>
               )}
               <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground hover:text-destructive px-2 sm:px-3">
