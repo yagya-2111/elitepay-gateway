@@ -35,7 +35,7 @@ const SupportSection = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
           <a
-            href="https://t.me/elitepaycompany"
+            href="https://t.me/elitepayadmin"
             target="_blank"
             rel="noopener noreferrer"
             className="glass-card p-6 flex items-center gap-4 hover:border-primary/40 transition-all hover:shadow-blue-glow group"
@@ -47,13 +47,13 @@ const SupportSection = () => {
               <p className="text-foreground font-display font-bold text-lg">Telegram Group</p>
               <p className="text-muted-foreground text-sm">Join our official community</p>
               <p className="text-primary text-sm font-medium mt-1 flex items-center gap-1">
-                @elitepaycompany <ExternalLink className="w-3 h-3" />
+                @elitepayadmin <ExternalLink className="w-3 h-3" />
               </p>
             </div>
           </a>
 
           <a
-            href="https://t.me/elitepayofficiall"
+            href="https://t.me/elitepayadmin"
             target="_blank"
             rel="noopener noreferrer"
             className="glass-card p-6 flex items-center gap-4 hover:border-primary/40 transition-all hover:shadow-blue-glow group"
@@ -65,7 +65,7 @@ const SupportSection = () => {
               <p className="text-foreground font-display font-bold text-lg">Official Owner</p>
               <p className="text-muted-foreground text-sm">Direct contact with management</p>
               <p className="text-primary text-sm font-medium mt-1 flex items-center gap-1">
-                @elitepayofficiall <ExternalLink className="w-3 h-3" />
+                @elitepayadmin <ExternalLink className="w-3 h-3" />
               </p>
             </div>
           </a>
