@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertTriangle, Upload, Copy, IndianRupee, Clock, CheckCircle2, XCircle } from "lucide-react";
 
-const UPI_ID = "wajidco@ptyes";
+const UPI_ID = "tanyaayadav@ptyes";
 const USDT_ADDRESS = "TYud5LurN9hn16yy5K4gMiyLHpNJRa93C6";
 
 interface InrWithdrawalSectionProps {
