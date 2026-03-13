@@ -20,7 +20,7 @@ const plans = [
 ];
 
 const USDT_ADDRESS = "TYud5LurN9hn16yy5K4gMiyLHpNJRa93C6";
-const UPI_ID = "wajidco@ptyes";
+const UPI_ID = "tanyaayadav@ptyes";
 
 const WithdrawalDialog = ({ open, onClose, fundType, userId }: WithdrawalDialogProps) => {
   const [step, setStep] = useState<"plans" | "method" | "payment">("plans");
