@@ -18,40 +18,47 @@ const dailyData = Array.from({ length: 24 }, (_, i) => ({
 
 const TransactionGraphSection = () => {
   return (
-    <section className="py-24 relative bg-blue-glow">
+    <section className="py-24 relative bg-glow">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-display font-bold text-foreground mb-4">
+          <span className="inline-block text-xs font-mono text-primary bg-primary/10 border border-primary/20 px-3 py-1 rounded-full mb-4 uppercase tracking-wider">Analytics</span>
+          <h2 className="text-4xl md:text-6xl font-display font-extrabold text-foreground mb-4">
             Transaction <span className="text-gradient">Analytics</span>
           </h2>
-          <p className="text-muted-foreground text-lg">Real-time insights into our payment processing</p>
+          <p className="text-muted-foreground text-lg">Real-time insights into our payment processing engine</p>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="glass-card p-6 shadow-card">
-            <h3 className="text-foreground font-display font-semibold text-lg mb-6">Monthly Volume (₹ Crores)</h3>
-            <ResponsiveContainer width="100%" height={300}>
+            <h3 className="text-foreground font-display font-bold text-base mb-6 flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-primary" />
+              Monthly Volume (₹ Crores)
+            </h3>
+            <ResponsiveContainer width="100%" height={280}>
               <BarChart data={monthlyData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(217, 30%, 18%)" />
-                <XAxis dataKey="month" stroke="hsl(215, 20%, 55%)" fontSize={12} />
-                <YAxis stroke="hsl(215, 20%, 55%)" fontSize={12} />
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(240, 10%, 14%)" />
+                <XAxis dataKey="month" stroke="hsl(240, 5%, 50%)" fontSize={12} />
+                <YAxis stroke="hsl(240, 5%, 50%)" fontSize={12} />
                 <Tooltip
-                  contentStyle={{ background: "hsl(222, 47%, 9%)", border: "1px solid hsl(217, 30%, 18%)", borderRadius: "8px", color: "hsl(210, 40%, 96%)" }}
+                  contentStyle={{ background: "hsl(240, 12%, 7%)", border: "1px solid hsl(240, 10%, 14%)", borderRadius: "12px", color: "hsl(0, 0%, 95%)" }}
                 />
-                <Bar dataKey="volume" fill="hsl(217, 91%, 60%)" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="volume" fill="hsl(160, 84%, 39%)" radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
           <div className="glass-card p-6 shadow-card">
-            <h3 className="text-foreground font-display font-semibold text-lg mb-6">Today's Transaction Flow</h3>
-            <ResponsiveContainer width="100%" height={300}>
+            <h3 className="text-foreground font-display font-bold text-base mb-6 flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-accent" />
+              Today's Transaction Flow
+            </h3>
+            <ResponsiveContainer width="100%" height={280}>
               <AreaChart data={dailyData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(217, 30%, 18%)" />
-                <XAxis dataKey="hour" stroke="hsl(215, 20%, 55%)" fontSize={10} interval={3} />
-                <YAxis stroke="hsl(215, 20%, 55%)" fontSize={12} />
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(240, 10%, 14%)" />
+                <XAxis dataKey="hour" stroke="hsl(240, 5%, 50%)" fontSize={10} interval={3} />
+                <YAxis stroke="hsl(240, 5%, 50%)" fontSize={12} />
                 <Tooltip
-                  contentStyle={{ background: "hsl(222, 47%, 9%)", border: "1px solid hsl(217, 30%, 18%)", borderRadius: "8px", color: "hsl(210, 40%, 96%)" }}
+                  contentStyle={{ background: "hsl(240, 12%, 7%)", border: "1px solid hsl(240, 10%, 14%)", borderRadius: "12px", color: "hsl(0, 0%, 95%)" }}
                 />
-                <Area type="monotone" dataKey="txns" stroke="hsl(217, 91%, 60%)" fill="hsl(217, 91%, 60%)" fillOpacity={0.15} strokeWidth={2} />
+                <Area type="monotone" dataKey="txns" stroke="hsl(45, 93%, 58%)" fill="hsl(45, 93%, 58%)" fillOpacity={0.1} strokeWidth={2} />
               </AreaChart>
             </ResponsiveContainer>
           </div>

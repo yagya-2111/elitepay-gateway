@@ -14,8 +14,9 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Poppins', 'sans-serif'],
-        display: ['TASA Explorer', 'Poppins', 'sans-serif'],
+        sans: ['Space Grotesk', 'Inter', 'sans-serif'],
+        display: ['Syne', 'Space Grotesk', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
       },
       colors: {
         border: "hsl(var(--border))",
