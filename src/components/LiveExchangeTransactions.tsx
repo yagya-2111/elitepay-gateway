@@ -1,17 +1,15 @@
 import { useEffect, useState } from "react";
-import { CheckCircle2, Clock, ArrowRightLeft } from "lucide-react";
+import { CheckCircle2, Clock, ArrowRightLeft, TrendingUp } from "lucide-react";
 
 const walletPrefixes = [
   "TYud5L", "TNpXk9", "TRxvHn", "TWd4kQ", "TJfB7m", "TKzXcP",
   "TX8rVn", "TQm3Lp", "TFhN7s", "TBcR2w", "THjK4x", "TLmP6v",
-  "TPqS8y", "TDwU3t", "TGnW5r", "TZaY9q", "TCeA1u", "TIgC7o",
-  "TViE2n", "TXkG4m",
 ];
 
 const FUND_TYPES = [
-  { label: "Pure Fund", rate: 98, color: "text-primary" },
-  { label: "Gaming Fund", rate: 105, color: "text-accent" },
-  { label: "Stock Fund", rate: 110, color: "text-success" },
+  { label: "Pure", rate: 98, color: "text-primary" },
+  { label: "Gaming", rate: 105, color: "text-accent" },
+  { label: "Stock", rate: 110, color: "text-primary" },
 ];
 
 interface ExTxn {
@@ -45,13 +43,13 @@ const LiveExchangeTransactions = () => {
   const [txns, setTxns] = useState<ExTxn[]>([]);
 
   useEffect(() => {
-    const initial = Array.from({ length: 12 }, (_, i) => generateExTxn(i));
+    const initial = Array.from({ length: 6 }, (_, i) => generateExTxn(i));
     setTxns(initial);
-    let counter = 12;
+    let counter = 6;
     const interval = setInterval(() => {
       setTxns((prev) => {
         const newTxn = generateExTxn(counter++);
-        return [newTxn, ...prev.slice(0, 11)];
+        return [newTxn, ...prev.slice(0, 5)];
       });
     }, 3000);
     return () => clearInterval(interval);
@@ -60,44 +58,54 @@ const LiveExchangeTransactions = () => {
   return (
     <section className="py-24 relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 mb-4">
-            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span className="text-sm text-primary font-medium">Live Exchange</span>
-          </div>
-          <h2 className="text-4xl md:text-5xl font-display font-bold text-foreground mb-4">
-            Real-Time USDT → INR <span className="text-gradient">Exchange</span>
-          </h2>
-          <p className="text-muted-foreground text-lg">Watch live USDT to INR conversions happening right now</p>
-        </div>
-        <div className="glass-card overflow-hidden shadow-card">
-          <div className="grid grid-cols-5 gap-3 p-4 border-b border-border/50 text-sm font-medium text-muted-foreground hidden sm:grid">
-            <span>Wallet</span>
-            <span>USDT</span>
-            <span>INR Received</span>
-            <span>Fund Type</span>
-            <span>Status</span>
-          </div>
-          <div className="divide-y divide-border/30">
-            {txns.map((txn) => (
-              <div key={txn.id} className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3 p-3 sm:p-4 items-center text-sm hover:bg-secondary/30 transition-colors animate-fade-in-up">
-                <span className="text-foreground font-mono text-xs truncate">{txn.wallet}</span>
-                <span className="text-foreground font-semibold flex items-center gap-1">
-                  <ArrowRightLeft className="w-3 h-3 text-primary" /> ${txn.usdAmount}
-                </span>
-                <span className="text-success font-semibold">{txn.inrAmount}</span>
-                <span className={`text-xs font-medium ${txn.fund.color}`}>{txn.fund.label}</span>
-                <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full w-fit ${
-                  txn.status === "completed"
-                    ? "bg-success/10 text-success"
-                    : "bg-warning/10 text-warning"
-                }`}>
-                  {txn.status === "completed" ? <CheckCircle2 className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
-                  {txn.status === "completed" ? "Completed" : "Processing"}
-                </span>
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="relative">
+                <div className="glow-dot" />
+                <div className="absolute inset-0 glow-dot animate-pulse-ring" />
               </div>
-            ))}
+              <span className="text-xs font-mono text-accent uppercase tracking-wider">Live Exchange</span>
+            </div>
+            <h2 className="text-3xl md:text-4xl font-display font-extrabold text-foreground">
+              USDT → INR <span className="text-gradient-gold">Conversions</span>
+            </h2>
           </div>
+          <div className="hidden md:flex items-center gap-2 px-4 py-2 glass-card text-sm">
+            <TrendingUp className="w-4 h-4 text-primary" />
+            <span className="text-muted-foreground">Volume:</span>
+            <span className="text-primary font-bold font-mono">$2.4M</span>
+            <span className="text-muted-foreground">/24h</span>
+          </div>
+        </div>
+
+        {/* Horizontal ticker-style cards */}
+        <div className="space-y-3">
+          {txns.map((txn) => (
+            <div
+              key={txn.id}
+              className="glass-card p-4 animate-slide-up flex items-center gap-4 hover:border-primary/20 transition-all duration-300"
+            >
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <ArrowRightLeft className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0 grid grid-cols-2 sm:grid-cols-5 gap-2 items-center">
+                <span className="font-mono text-xs text-muted-foreground truncate">{txn.wallet}</span>
+                <span className="text-foreground font-bold font-display">${txn.usdAmount}</span>
+                <span className="text-primary font-bold">{txn.inrAmount}</span>
+                <span className={`text-xs font-medium ${txn.fund.color}`}>{txn.fund.label} @₹{txn.fund.rate}</span>
+                <div className="flex items-center justify-between">
+                  <span className={`inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full ${
+                    txn.status === "completed" ? "bg-primary/10 text-primary" : "bg-accent/10 text-accent"
+                  }`}>
+                    {txn.status === "completed" ? <CheckCircle2 className="w-2.5 h-2.5" /> : <Clock className="w-2.5 h-2.5" />}
+                    {txn.status === "completed" ? "Done" : "Pending"}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground font-mono">{txn.time}</span>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </section>

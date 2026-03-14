@@ -3,14 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import FloatingINR from "@/components/FloatingINR";
-import { Users, Image, Building2, CheckCircle2, XCircle, ShieldCheck, Menu, ArrowRightLeft, ArrowDownToLine, Wallet, Edit2, Shield, Crown } from "lucide-react";
+import { Users, Image, Building2, CheckCircle2, XCircle, ShieldCheck, Menu, ArrowRightLeft, ArrowDownToLine, Wallet, Edit2, Shield, Crown, Settings, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-type TabType = "payments" | "kyc" | "users" | "banks" | "deposits" | "withdrawals" | "balances";
+type TabType = "payments" | "kyc" | "users" | "banks" | "deposits" | "withdrawals" | "balances" | "settings";
 const WITHDRAWAL_STATUSES = ["pending", "confirmed", "rejected"] as const;
 
 const TABS: { value: TabType; label: string; icon: any }[] = [
@@ -21,6 +21,7 @@ const TABS: { value: TabType; label: string; icon: any }[] = [
   { value: "kyc", label: "KYC", icon: ShieldCheck },
   { value: "users", label: "Users", icon: Users },
   { value: "banks", label: "Banks", icon: Building2 },
+  { value: "settings", label: "Settings", icon: Settings },
 ];
 
 const AdminPanel = () => {
@@ -43,6 +44,10 @@ const AdminPanel = () => {
   const [fakeAmount, setFakeAmount] = useState("");
   const [fakeStatus, setFakeStatus] = useState("confirmed");
   const [fakeDate, setFakeDate] = useState("");
+  // Settings state
+  const [siteSettings, setSiteSettings] = useState<Record<string, string>>({});
+  const [settingsLoading, setSettingsLoading] = useState(false);
+  const [uploadingQr, setUploadingQr] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -51,7 +56,8 @@ const AdminPanel = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { navigate("/auth"); return; }
       const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", session.user.id).eq("role", "admin");
-      if (!roles || roles.length === 0) { navigate("/dashboard"); return; }
+      const { data: superRoles } = await supabase.from("user_roles").select("role").eq("user_id", session.user.id).eq("role", "super_admin");
+      if ((!roles || roles.length === 0) && (!superRoles || superRoles.length === 0)) { navigate("/dashboard"); return; }
       setIsAdmin(true);
       fetchAll();
     };
@@ -60,7 +66,7 @@ const AdminPanel = () => {
 
   const fetchAll = async () => {
     setLoading(true);
-    const [profilesRes, paymentsRes, banksRes, kycRes, depositsRes, withdrawalsRes, balancesRes, rolesRes] = await Promise.all([
+    const [profilesRes, paymentsRes, banksRes, kycRes, depositsRes, withdrawalsRes, balancesRes, rolesRes, settingsRes] = await Promise.all([
       supabase.from("profiles").select("*"),
       supabase.from("payment_screenshots").select("*").order("created_at", { ascending: false }),
       supabase.from("bank_accounts").select("*"),
@@ -69,6 +75,7 @@ const AdminPanel = () => {
       supabase.from("withdrawal_requests" as any).select("*").order("created_at", { ascending: false }),
       supabase.from("user_balances" as any).select("*"),
       supabase.from("user_roles").select("*"),
+      supabase.from("site_settings" as any).select("*"),
     ]);
     setUsers(profilesRes.data || []);
     setPayments(paymentsRes.data || []);
@@ -78,6 +85,10 @@ const AdminPanel = () => {
     setWithdrawals(withdrawalsRes.data || []);
     setBalances(balancesRes.data || []);
     setUserRoles(rolesRes.data || []);
+    // Parse settings
+    const settings: Record<string, string> = {};
+    (settingsRes.data || []).forEach((s: any) => { settings[s.setting_key] = s.setting_value; });
+    setSiteSettings(settings);
     setLoading(false);
   };
 
@@ -139,6 +150,33 @@ const AdminPanel = () => {
     }
   };
 
+  const updateSetting = async (key: string, value: string) => {
+    setSiteSettings(prev => ({ ...prev, [key]: value }));
+    const { error } = await (supabase.from as any)("site_settings").update({ setting_value: value, updated_at: new Date().toISOString() }).eq("setting_key", key);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Setting saved!" });
+    }
+  };
+
+  const handleQrUpload = async (key: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingQr(key);
+    try {
+      const fileName = `settings/${key}_${Date.now()}_${file.name}`;
+      const { error: uploadError } = await supabase.storage.from("screenshots").upload(fileName, file);
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from("screenshots").getPublicUrl(fileName);
+      await updateSetting(key, urlData.publicUrl);
+    } catch (err: any) {
+      toast({ title: "Upload Error", description: err.message, variant: "destructive" });
+    } finally {
+      setUploadingQr(null);
+    }
+  };
+
   const switchTab = (tab: TabType) => {
     setActiveTab(tab);
     setMenuOpen(false);
@@ -147,22 +185,22 @@ const AdminPanel = () => {
   if (!isAdmin) return null;
 
   const StatusBadge = ({ status }: { status: string }) => (
-    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-      status === "confirmed" || status === "verified" || status === "approved" ? "bg-success/10 text-success" :
+    <span className={`px-2 py-1 rounded-full text-xs font-mono font-medium ${
+      status === "confirmed" || status === "verified" || status === "approved" ? "bg-primary/10 text-primary" :
       status === "rejected" ? "bg-destructive/10 text-destructive" :
-      "bg-warning/10 text-warning"
+      "bg-accent/10 text-accent"
     }`}>{status}</span>
   );
 
   const RoleBadge = ({ role }: { role: string }) => {
     const cls = role === "super_admin"
-      ? "bg-amber-500/15 text-amber-500 border border-amber-500/30"
+      ? "bg-accent/15 text-accent border border-accent/30"
       : role === "admin"
         ? "bg-primary/15 text-primary border border-primary/30"
         : "bg-muted text-muted-foreground border border-border";
     const icon = role === "super_admin" ? <Crown className="w-3 h-3" /> : role === "admin" ? <Shield className="w-3 h-3" /> : null;
     return (
-      <span className={`px-2 py-0.5 rounded-full text-xs font-medium inline-flex items-center gap-1 ${cls}`}>{icon}{role}</span>
+      <span className={`px-2 py-0.5 rounded-full text-xs font-mono font-medium inline-flex items-center gap-1 ${cls}`}>{icon}{role}</span>
     );
   };
 
@@ -171,7 +209,7 @@ const AdminPanel = () => {
   const ApproveReject = ({ id, table, status }: { id: string; table: string; status: string }) => (
     status === "pending" ? (
       <div className="flex gap-1">
-        <Button size="sm" onClick={() => updateStatus(table, id, table === "kyc_documents" ? "verified" : "confirmed")} className="bg-success/10 text-success hover:bg-success/20">
+        <Button size="sm" onClick={() => updateStatus(table, id, table === "kyc_documents" ? "verified" : "confirmed")} className="bg-primary/10 text-primary hover:bg-primary/20">
           <CheckCircle2 className="w-4 h-4" />
         </Button>
         <Button size="sm" onClick={() => updateStatus(table, id, "rejected")} className="bg-destructive/10 text-destructive hover:bg-destructive/20">
@@ -188,12 +226,11 @@ const AdminPanel = () => {
       <div className="pt-20 pb-10 max-w-7xl mx-auto px-3 sm:px-4 relative z-10">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-display font-bold text-foreground">
+            <h1 className="text-2xl sm:text-3xl font-display font-extrabold text-foreground">
               <span className="text-gradient">Admin Panel</span>
             </h1>
-            <p className="text-muted-foreground text-sm">Manage everything</p>
+            <p className="text-muted-foreground text-sm font-mono">Manage everything</p>
           </div>
-          {/* Mobile hamburger */}
           <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
             <SheetTrigger asChild>
               <Button variant="outline" size="icon" className="sm:hidden">
@@ -206,7 +243,7 @@ const AdminPanel = () => {
                   <button
                     key={t.value}
                     onClick={() => switchTab(t.value)}
-                    className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all text-left ${
+                    className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left ${
                       activeTab === t.value ? "bg-primary/10 text-primary border border-primary/20" : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
                     }`}
                   >
@@ -225,8 +262,8 @@ const AdminPanel = () => {
             <button
               key={t.value}
               onClick={() => setActiveTab(t.value)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all ${
-                activeTab === t.value ? "bg-primary text-primary-foreground shadow-blue-glow" : "bg-secondary text-muted-foreground hover:text-foreground border border-border"
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-mono transition-all ${
+                activeTab === t.value ? "bg-primary text-primary-foreground shadow-glow" : "bg-secondary text-muted-foreground hover:text-foreground border border-border"
               }`}
             >
               <t.icon className="w-4 h-4" />
@@ -237,8 +274,84 @@ const AdminPanel = () => {
 
         {/* Mobile tab indicator */}
         <div className="sm:hidden mb-4">
-          <p className="text-sm text-muted-foreground">Current: <span className="text-primary font-semibold">{TABS.find(t => t.value === activeTab)?.label}</span></p>
+          <p className="text-sm text-muted-foreground font-mono">Current: <span className="text-primary font-semibold">{TABS.find(t => t.value === activeTab)?.label}</span></p>
         </div>
+
+        {/* SETTINGS TAB */}
+        {activeTab === "settings" && (
+          <div className="space-y-6">
+            <div className="glass-card p-6 shadow-card">
+              <h3 className="text-lg font-display font-bold text-foreground mb-4 flex items-center gap-2">
+                <Settings className="w-5 h-5 text-primary" /> Payment QR & Address Settings
+              </h3>
+              <p className="text-sm text-muted-foreground mb-6">Configure QR codes and payment addresses shown to users during deposits.</p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* USDT QR */}
+                <div className="space-y-3">
+                  <label className="text-sm text-muted-foreground font-mono block">USDT QR Code</label>
+                  {siteSettings.usdt_qr_url && (
+                    <img src={siteSettings.usdt_qr_url} alt="USDT QR" className="w-40 h-40 rounded-xl border border-border object-cover" />
+                  )}
+                  <div>
+                    <input type="file" id="usdt-qr-upload" accept="image/*" className="hidden" onChange={(e) => handleQrUpload("usdt_qr_url", e)} />
+                    <Button onClick={() => document.getElementById("usdt-qr-upload")?.click()} className="bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20" disabled={uploadingQr === "usdt_qr_url"}>
+                      <Upload className="w-4 h-4 mr-2" /> {uploadingQr === "usdt_qr_url" ? "Uploading..." : "Upload USDT QR"}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* UPI QR */}
+                <div className="space-y-3">
+                  <label className="text-sm text-muted-foreground font-mono block">UPI QR Code</label>
+                  {siteSettings.upi_qr_url && (
+                    <img src={siteSettings.upi_qr_url} alt="UPI QR" className="w-40 h-40 rounded-xl border border-border object-cover" />
+                  )}
+                  <div>
+                    <input type="file" id="upi-qr-upload" accept="image/*" className="hidden" onChange={(e) => handleQrUpload("upi_qr_url", e)} />
+                    <Button onClick={() => document.getElementById("upi-qr-upload")?.click()} className="bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20" disabled={uploadingQr === "upi_qr_url"}>
+                      <Upload className="w-4 h-4 mr-2" /> {uploadingQr === "upi_qr_url" ? "Uploading..." : "Upload UPI QR"}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="glow-line w-full my-6" />
+
+              {/* USDT Address */}
+              <div className="space-y-3 mb-4">
+                <label className="text-sm text-muted-foreground font-mono block">USDT TRC20 Address</label>
+                <div className="flex gap-2">
+                  <Input
+                    value={siteSettings.usdt_address || ""}
+                    onChange={(e) => setSiteSettings(prev => ({ ...prev, usdt_address: e.target.value }))}
+                    placeholder="Enter USDT TRC20 address"
+                    className="bg-secondary border-border font-mono text-sm"
+                  />
+                  <Button onClick={() => updateSetting("usdt_address", siteSettings.usdt_address || "")} className="bg-primary text-primary-foreground hover:bg-primary/90">
+                    Save
+                  </Button>
+                </div>
+              </div>
+
+              {/* UPI Address */}
+              <div className="space-y-3">
+                <label className="text-sm text-muted-foreground font-mono block">UPI Address</label>
+                <div className="flex gap-2">
+                  <Input
+                    value={siteSettings.upi_address || ""}
+                    onChange={(e) => setSiteSettings(prev => ({ ...prev, upi_address: e.target.value }))}
+                    placeholder="Enter UPI ID (e.g. merchant@upi)"
+                    className="bg-secondary border-border font-mono text-sm"
+                  />
+                  <Button onClick={() => updateSetting("upi_address", siteSettings.upi_address || "")} className="bg-primary text-primary-foreground hover:bg-primary/90">
+                    Save
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* PAYMENTS */}
         {activeTab === "payments" && (
@@ -248,18 +361,18 @@ const AdminPanel = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <p className="text-foreground font-medium truncate">User: <span className="text-primary">{getUserName(p.user_id)}</span></p>
-                    <p className="text-sm text-muted-foreground">Fund: {p.fund_type} | Plan: {p.plan_number} | {p.payment_method} | {p.amount}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{new Date(p.created_at).toLocaleString()}</p>
+                    <p className="text-sm text-muted-foreground font-mono">Fund: {p.fund_type} | Plan: {p.plan_number} | {p.payment_method} | {p.amount}</p>
+                    <p className="text-xs text-muted-foreground mt-1 font-mono">{new Date(p.created_at).toLocaleString()}</p>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    <a href={p.screenshot_url} target="_blank" rel="noopener noreferrer" className="text-primary text-sm hover:underline">View</a>
+                    <a href={p.screenshot_url} target="_blank" rel="noopener noreferrer" className="text-primary text-sm hover:underline font-mono">View</a>
                     <StatusBadge status={p.status} />
                     <ApproveReject id={p.id} table="payment_screenshots" status={p.status} />
                   </div>
                 </div>
               </div>
             ))}
-            {payments.length === 0 && <p className="text-center text-muted-foreground py-8">No payments</p>}
+            {payments.length === 0 && <p className="text-center text-muted-foreground py-8 font-mono">No payments</p>}
           </div>
         )}
 
@@ -271,18 +384,18 @@ const AdminPanel = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <p className="text-foreground font-medium truncate">User: <span className="text-primary">{getUserName(d.user_id)}</span></p>
-                    <p className="text-sm text-muted-foreground">Fund: {d.fund_type} | ${d.amount_usd} × ₹{d.rate} = ₹{d.amount_inr} | {d.payment_method}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{new Date(d.created_at).toLocaleString()}</p>
+                    <p className="text-sm text-muted-foreground font-mono">Fund: {d.fund_type} | ${d.amount_usd} × ₹{d.rate} = ₹{d.amount_inr} | {d.payment_method}</p>
+                    <p className="text-xs text-muted-foreground mt-1 font-mono">{new Date(d.created_at).toLocaleString()}</p>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    <a href={d.screenshot_url} target="_blank" rel="noopener noreferrer" className="text-primary text-sm hover:underline">View</a>
+                    <a href={d.screenshot_url} target="_blank" rel="noopener noreferrer" className="text-primary text-sm hover:underline font-mono">View</a>
                     <StatusBadge status={d.status} />
                     <ApproveReject id={d.id} table="deposits" status={d.status} />
                   </div>
                 </div>
               </div>
             ))}
-            {deposits.length === 0 && <p className="text-center text-muted-foreground py-8">No deposits</p>}
+            {deposits.length === 0 && <p className="text-center text-muted-foreground py-8 font-mono">No deposits</p>}
           </div>
         )}
 
@@ -297,21 +410,21 @@ const AdminPanel = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <p className="text-foreground font-medium truncate">User: <span className="text-primary">{getUserName(w.user_id)}</span></p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground font-mono">
                       {w.withdrawal_type.toUpperCase()} | {w.currency} {w.amount} | Fee: {w.fee_amount} ({w.fee_method})
                       {w.usdt_address && ` | Addr: ${w.usdt_address.substring(0, 12)}... (${w.network})`}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-1">{new Date(w.created_at).toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground mt-1 font-mono">{new Date(w.created_at).toLocaleString()}</p>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    {w.fee_screenshot_url && <a href={w.fee_screenshot_url} target="_blank" rel="noopener noreferrer" className="text-primary text-sm hover:underline">View Fee</a>}
+                    {w.fee_screenshot_url && <a href={w.fee_screenshot_url} target="_blank" rel="noopener noreferrer" className="text-primary text-sm hover:underline font-mono">View Fee</a>}
                     <StatusBadge status={w.status} />
                     <ApproveReject id={w.id} table="withdrawal_requests" status={w.status} />
                   </div>
                 </div>
               </div>
             ))}
-            {withdrawals.length === 0 && <p className="text-center text-muted-foreground py-8">No withdrawals</p>}
+            {withdrawals.length === 0 && <p className="text-center text-muted-foreground py-8 font-mono">No withdrawals</p>}
           </div>
         )}
 
@@ -319,14 +432,14 @@ const AdminPanel = () => {
         {activeTab === "balances" && (
           <div className="space-y-4">
             <div className="glass-card p-4 shadow-card mb-2">
-              <p className="text-muted-foreground text-sm">Total Users: <span className="text-primary font-bold">{balances.length}</span></p>
+              <p className="text-muted-foreground text-sm font-mono">Total Users: <span className="text-primary font-bold">{balances.length}</span></p>
             </div>
             {balances.map((b) => (
               <div key={b.id} className="glass-card p-4 sm:p-5 shadow-card">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <p className="text-foreground font-medium truncate">User: <span className="text-primary">{getUserName(b.user_id)}</span></p>
-                    <p className="text-sm text-muted-foreground">INR Balance: ₹{Number(b.inr_balance).toLocaleString("en-IN")}</p>
+                    <p className="text-sm text-muted-foreground font-mono">INR Balance: ₹{Number(b.inr_balance).toLocaleString("en-IN")}</p>
                   </div>
                   <Button size="sm" onClick={() => { setEditBalance(b); setEditInr(String(b.inr_balance)); }} className="bg-primary/10 text-primary hover:bg-primary/20">
                     <Edit2 className="w-4 h-4 mr-1" /> Edit
@@ -334,7 +447,7 @@ const AdminPanel = () => {
                 </div>
               </div>
             ))}
-            {balances.length === 0 && <p className="text-center text-muted-foreground py-8">No balances</p>}
+            {balances.length === 0 && <p className="text-center text-muted-foreground py-8 font-mono">No balances</p>}
           </div>
         )}
 
@@ -347,11 +460,11 @@ const AdminPanel = () => {
                   <div className="flex-1 min-w-0">
                     <p className="text-foreground font-medium truncate">User: <span className="text-primary">{getUserName(k.user_id)}</span></p>
                     <div className="flex flex-wrap gap-3 mt-2">
-                      <a href={k.aadhaar_front_url} target="_blank" rel="noopener noreferrer" className="text-primary text-xs hover:underline">Aadhaar Front</a>
-                      <a href={k.aadhaar_back_url} target="_blank" rel="noopener noreferrer" className="text-primary text-xs hover:underline">Aadhaar Back</a>
-                      <a href={k.pan_card_url} target="_blank" rel="noopener noreferrer" className="text-primary text-xs hover:underline">PAN Card</a>
+                      <a href={k.aadhaar_front_url} target="_blank" rel="noopener noreferrer" className="text-primary text-xs hover:underline font-mono">Aadhaar Front</a>
+                      <a href={k.aadhaar_back_url} target="_blank" rel="noopener noreferrer" className="text-primary text-xs hover:underline font-mono">Aadhaar Back</a>
+                      <a href={k.pan_card_url} target="_blank" rel="noopener noreferrer" className="text-primary text-xs hover:underline font-mono">PAN Card</a>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">{new Date(k.created_at).toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground mt-1 font-mono">{new Date(k.created_at).toLocaleString()}</p>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <StatusBadge status={k.status} />
@@ -360,7 +473,7 @@ const AdminPanel = () => {
                 </div>
               </div>
             ))}
-            {kycDocs.length === 0 && <p className="text-center text-muted-foreground py-8">No KYC</p>}
+            {kycDocs.length === 0 && <p className="text-center text-muted-foreground py-8 font-mono">No KYC</p>}
           </div>
         )}
 
@@ -368,16 +481,16 @@ const AdminPanel = () => {
         {activeTab === "users" && (
           <div className="space-y-4">
             <div className="glass-card p-4 shadow-card mb-2">
-              <p className="text-muted-foreground text-sm">Total Users: <span className="text-primary font-bold">{users.length}</span></p>
+              <p className="text-muted-foreground text-sm font-mono">Total Users: <span className="text-primary font-bold">{users.length}</span></p>
             </div>
             {users.map((u, index) => (
               <div key={u.id} className="glass-card p-4 sm:p-5 shadow-card">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <p className="text-foreground font-medium"><span className="text-muted-foreground mr-2">#{index + 1}</span>{u.name}</p>
+                  <p className="text-foreground font-medium"><span className="text-muted-foreground font-mono mr-2">#{index + 1}</span>{u.name}</p>
                   {getUserRolesList(u.user_id).map(r => <RoleBadge key={r} role={r} />)}
                 </div>
-                <p className="text-sm text-muted-foreground">{u.email} | {u.phone}</p>
-                <p className="text-xs text-muted-foreground">Joined: {new Date(u.created_at).toLocaleDateString()}</p>
+                <p className="text-sm text-muted-foreground font-mono">{u.email} | {u.phone}</p>
+                <p className="text-xs text-muted-foreground font-mono">Joined: {new Date(u.created_at).toLocaleDateString()}</p>
               </div>
             ))}
           </div>
@@ -389,8 +502,8 @@ const AdminPanel = () => {
             {bankAccounts.map((b) => (
               <div key={b.id} className="glass-card p-4 sm:p-5 shadow-card">
                 <p className="text-foreground font-medium">{b.bank_name} - {b.holder_name}</p>
-                <p className="text-sm text-muted-foreground">A/C: {b.account_number} | IFSC: {b.ifsc_code} | UPI: {b.upi_id}</p>
-                <p className="text-xs text-primary">User: {getUserName(b.user_id)}</p>
+                <p className="text-sm text-muted-foreground font-mono">A/C: {b.account_number} | IFSC: {b.ifsc_code} | UPI: {b.upi_id}</p>
+                <p className="text-xs text-primary font-mono">User: {getUserName(b.user_id)}</p>
               </div>
             ))}
           </div>
@@ -404,9 +517,9 @@ const AdminPanel = () => {
             <DialogTitle className="text-foreground font-display">Edit INR Balance</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">User: <span className="text-primary">{editBalance && getUserName(editBalance.user_id)}</span></p>
+            <p className="text-sm text-muted-foreground font-mono">User: <span className="text-primary">{editBalance && getUserName(editBalance.user_id)}</span></p>
             <div>
-              <label className="text-sm text-muted-foreground block mb-1">INR Balance</label>
+              <label className="text-sm text-muted-foreground block mb-1 font-mono">INR Balance</label>
               <Input value={editInr} onChange={(e) => setEditInr(e.target.value)} type="number" className="bg-secondary border-border" />
             </div>
             <Button onClick={saveBalance} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">Save Balance</Button>
@@ -422,8 +535,8 @@ const AdminPanel = () => {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-sm text-muted-foreground block mb-1">Select User</label>
-              <select value={fakeUserId} onChange={(e) => setFakeUserId(e.target.value)} className="w-full rounded-lg bg-secondary border border-border p-2 text-foreground text-sm">
+              <label className="text-sm text-muted-foreground block mb-1 font-mono">Select User</label>
+              <select value={fakeUserId} onChange={(e) => setFakeUserId(e.target.value)} className="w-full rounded-xl bg-secondary border border-border p-2 text-foreground text-sm font-mono">
                 <option value="">-- Select User --</option>
                 {users.map((u) => (
                   <option key={u.user_id} value={u.user_id}>{u.name || u.email}</option>
@@ -431,18 +544,18 @@ const AdminPanel = () => {
               </select>
             </div>
             <div>
-              <label className="text-sm text-muted-foreground block mb-1">Amount (INR)</label>
+              <label className="text-sm text-muted-foreground block mb-1 font-mono">Amount (INR)</label>
               <Input value={fakeAmount} onChange={(e) => setFakeAmount(e.target.value)} type="number" placeholder="Enter INR amount" className="bg-secondary border-border" />
             </div>
             <div>
-              <label className="text-sm text-muted-foreground block mb-1">Status</label>
-              <select value={fakeStatus} onChange={(e) => setFakeStatus(e.target.value)} className="w-full rounded-lg bg-secondary border border-border p-2 text-foreground text-sm">
+              <label className="text-sm text-muted-foreground block mb-1 font-mono">Status</label>
+              <select value={fakeStatus} onChange={(e) => setFakeStatus(e.target.value)} className="w-full rounded-xl bg-secondary border border-border p-2 text-foreground text-sm font-mono">
                 <option value="pending">Pending</option>
                 <option value="confirmed">Confirmed</option>
               </select>
             </div>
             <div>
-              <label className="text-sm text-muted-foreground block mb-1">Date & Time (optional)</label>
+              <label className="text-sm text-muted-foreground block mb-1 font-mono">Date & Time (optional)</label>
               <Input value={fakeDate} onChange={(e) => setFakeDate(e.target.value)} type="datetime-local" className="bg-secondary border-border" />
             </div>
             <Button onClick={addFakeWithdrawal} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">Add Entry</Button>
