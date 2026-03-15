@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,22 +19,32 @@ const plans = [
   { id: 3, usdAmount: "200$", inrAmount: "20,000", reward: "80,000 INR" },
 ];
 
-const USDT_ADDRESS = "TYud5LurN9hn16yy5K4gMiyLHpNJRa93C6";
-const UPI_ID = "tanyaayadav@ptyes";
-
 const WithdrawalDialog = ({ open, onClose, fundType, userId }: WithdrawalDialogProps) => {
   const [step, setStep] = useState<"plans" | "method" | "payment">("plans");
   const [selectedPlan, setSelectedPlan] = useState<typeof plans[0] | null>(null);
   const [method, setMethod] = useState<"usdt" | "inr" | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [siteSettings, setSiteSettings] = useState<Record<string, string>>({});
   const fileRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  // Reset all state whenever dialog opens or closes
+  useEffect(() => {
+    const fetchSettings = async () => {
+      const { data } = await (supabase.from as any)("site_settings").select("*");
+      const settings: Record<string, string> = {};
+      (data || []).forEach((s: any) => { settings[s.setting_key] = s.setting_value; });
+      setSiteSettings(settings);
+    };
+    fetchSettings();
+  }, []);
+
+  const usdtAddress = siteSettings.usdt_address || "";
+  const usdtQrUrl = siteSettings.usdt_qr_url || "";
+  const upiQrUrl = siteSettings.upi_qr_url || "";
+  const upiAddress = siteSettings.upi_address || "";
+
   const handleOpenChange = (isOpen: boolean) => {
-    if (!isOpen) {
-      onClose();
-    }
+    if (!isOpen) onClose();
     setStep("plans");
     setSelectedPlan(null);
     setMethod(null);
@@ -45,9 +55,10 @@ const WithdrawalDialog = ({ open, onClose, fundType, userId }: WithdrawalDialogP
       supabase.from("bank_accounts").select("id").eq("user_id", userId).limit(1),
       supabase.from("kyc_documents").select("id").eq("user_id", userId).limit(1),
     ]);
-    const hasBank = bankRes.data && bankRes.data.length > 0;
-    const hasKyc = kycRes.data && kycRes.data.length > 0;
-    return { hasBank, hasKyc };
+    return {
+      hasBank: bankRes.data && bankRes.data.length > 0,
+      hasKyc: kycRes.data && kycRes.data.length > 0,
+    };
   };
 
   const selectPlan = (plan: typeof plans[0]) => {
@@ -63,17 +74,13 @@ const WithdrawalDialog = ({ open, onClose, fundType, userId }: WithdrawalDialogP
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     setUploading(true);
     try {
       const { hasBank, hasKyc } = await checkBankAndKyc();
-
       const fileName = `${userId}/${Date.now()}_${file.name}`;
       const { error: uploadError } = await supabase.storage.from("screenshots").upload(fileName, file);
       if (uploadError) throw uploadError;
-
       const { data: urlData } = supabase.storage.from("screenshots").getPublicUrl(fileName);
-
       const { error: insertError } = await supabase.from("payment_screenshots").insert({
         user_id: userId,
         fund_type: fundType,
@@ -85,28 +92,13 @@ const WithdrawalDialog = ({ open, onClose, fundType, userId }: WithdrawalDialogP
       if (insertError) throw insertError;
 
       if (!hasBank && !hasKyc) {
-        toast({
-          title: "Payment submitted!",
-          description: "Please add a bank account and complete KYC verification to receive your withdrawal.",
-          variant: "destructive",
-        });
+        toast({ title: "Payment submitted!", description: "Please add a bank account and complete KYC verification.", variant: "destructive" });
       } else if (!hasBank) {
-        toast({
-          title: "Payment submitted!",
-          description: "Please add a bank account to receive your withdrawal.",
-          variant: "destructive",
-        });
+        toast({ title: "Payment submitted!", description: "Please add a bank account to receive your withdrawal.", variant: "destructive" });
       } else if (!hasKyc) {
-        toast({
-          title: "Payment submitted!",
-          description: "Please complete KYC verification to receive your withdrawal.",
-          variant: "destructive",
-        });
+        toast({ title: "Payment submitted!", description: "Please complete KYC verification.", variant: "destructive" });
       } else {
-        toast({
-          title: "Payment submitted!",
-          description: "Deposit will be verified and withdrawal amount will be reflected in your bank account soon.",
-        });
+        toast({ title: "Payment submitted!", description: "Deposit will be verified and withdrawal amount reflected soon." });
       }
       onClose();
     } catch (err: any) {
@@ -118,7 +110,7 @@ const WithdrawalDialog = ({ open, onClose, fundType, userId }: WithdrawalDialogP
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="bg-card border-border max-w-lg">
+      <DialogContent className="bg-card border-border max-w-lg mx-4">
         <DialogHeader>
           <DialogTitle className="text-foreground font-display">
             {step === "plans" && "Choose Withdrawal Plan"}
@@ -130,17 +122,11 @@ const WithdrawalDialog = ({ open, onClose, fundType, userId }: WithdrawalDialogP
         {step === "plans" && (
           <div className="space-y-3">
             {plans.map((plan) => (
-              <button
-                key={plan.id}
-                onClick={() => selectPlan(plan)}
-                className="w-full p-4 rounded-lg bg-secondary/50 border border-border/50 hover:border-primary/30 transition-all text-left group hover:shadow-blue-glow"
-              >
+              <button key={plan.id} onClick={() => selectPlan(plan)} className="w-full p-4 rounded-lg bg-secondary/50 border border-border/50 hover:border-primary/30 transition-all text-left group">
                 <div className="flex justify-between items-center">
                   <div>
                     <p className="text-foreground font-semibold">Plan {plan.id}</p>
-                    <p className="text-muted-foreground text-sm">
-                      Deposit {plan.usdAmount} or ₹{plan.inrAmount}
-                    </p>
+                    <p className="text-muted-foreground text-sm">Deposit {plan.usdAmount} or ₹{plan.inrAmount}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-primary font-display font-bold">Get ₹{plan.reward}</p>
@@ -153,17 +139,11 @@ const WithdrawalDialog = ({ open, onClose, fundType, userId }: WithdrawalDialogP
 
         {step === "method" && (
           <div className="space-y-3">
-            <button
-              onClick={() => selectMethod("usdt")}
-              className="w-full p-4 rounded-lg bg-secondary/50 border border-border/50 hover:border-primary/30 transition-all text-left hover:shadow-blue-glow"
-            >
+            <button onClick={() => selectMethod("usdt")} className="w-full p-4 rounded-lg bg-secondary/50 border border-border/50 hover:border-primary/30 transition-all text-left">
               <p className="text-foreground font-semibold">USDT (TRC20)</p>
               <p className="text-muted-foreground text-sm">Pay via cryptocurrency</p>
             </button>
-            <button
-              onClick={() => selectMethod("inr")}
-              className="w-full p-4 rounded-lg bg-secondary/50 border border-border/50 hover:border-primary/30 transition-all text-left hover:shadow-blue-glow"
-            >
+            <button onClick={() => selectMethod("inr")} className="w-full p-4 rounded-lg bg-secondary/50 border border-border/50 hover:border-primary/30 transition-all text-left">
               <p className="text-foreground font-semibold">INR (UPI)</p>
               <p className="text-muted-foreground text-sm">Pay via UPI transfer</p>
             </button>
@@ -173,40 +153,49 @@ const WithdrawalDialog = ({ open, onClose, fundType, userId }: WithdrawalDialogP
         {step === "payment" && selectedPlan && method && (
           <div className="space-y-4">
             {method === "usdt" ? (
-              <>
-                <div className="bg-secondary/50 rounded-lg p-4 text-center">
-                  <img src="/images/usdt-qr.png" alt="USDT QR Code" className="w-40 h-40 mx-auto mb-3 rounded-lg" />
-                  <p className="text-xs text-muted-foreground mb-2">USDT TRC20 Address</p>
+              <div className="bg-secondary/50 rounded-lg p-4 text-center">
+                {usdtQrUrl ? (
+                  <img src={usdtQrUrl} alt="USDT QR Code" className="w-40 h-40 mx-auto mb-3 rounded-lg" />
+                ) : (
+                  <div className="w-40 h-40 mx-auto mb-3 rounded-lg bg-muted flex items-center justify-center text-muted-foreground text-sm font-mono">No QR Set</div>
+                )}
+                <p className="text-xs text-muted-foreground mb-2">USDT TRC20 Address</p>
+                {usdtAddress ? (
                   <div className="flex items-center justify-center gap-2">
-                    <code className="text-xs text-foreground bg-background px-2 py-1 rounded break-all">{USDT_ADDRESS}</code>
-                    <button onClick={() => { navigator.clipboard.writeText(USDT_ADDRESS); toast({ title: "Copied!" }); }}>
+                    <code className="text-xs text-foreground bg-background px-2 py-1 rounded break-all">{usdtAddress}</code>
+                    <button onClick={() => { navigator.clipboard.writeText(usdtAddress); toast({ title: "Copied!" }); }}>
                       <Copy className="w-4 h-4 text-primary" />
                     </button>
                   </div>
-                </div>
-                <div>
-                  <label className="text-sm text-muted-foreground block mb-1">Amount</label>
-                  <Input value={selectedPlan.usdAmount} disabled className="bg-secondary border-border" />
-                </div>
-              </>
+                ) : (
+                  <p className="text-xs text-muted-foreground font-mono">No address configured</p>
+                )}
+              </div>
             ) : (
-              <>
-                <div className="bg-secondary/50 rounded-lg p-4 text-center">
-                  <img src="/images/upi-qr.png" alt="UPI QR Code" className="w-40 h-40 mx-auto mb-3 rounded-lg" />
-                  <p className="text-xs text-muted-foreground mb-2">UPI ID</p>
+              <div className="bg-secondary/50 rounded-lg p-4 text-center">
+                {upiQrUrl ? (
+                  <img src={upiQrUrl} alt="UPI QR Code" className="w-40 h-40 mx-auto mb-3 rounded-lg" />
+                ) : (
+                  <div className="w-40 h-40 mx-auto mb-3 rounded-lg bg-muted flex items-center justify-center text-muted-foreground text-sm font-mono">No QR Set</div>
+                )}
+                <p className="text-xs text-muted-foreground mb-2">UPI ID</p>
+                {upiAddress ? (
                   <div className="flex items-center justify-center gap-2">
-                    <code className="text-foreground font-mono">{UPI_ID}</code>
-                    <button onClick={() => { navigator.clipboard.writeText(UPI_ID); toast({ title: "Copied!" }); }}>
+                    <code className="text-foreground font-mono">{upiAddress}</code>
+                    <button onClick={() => { navigator.clipboard.writeText(upiAddress); toast({ title: "Copied!" }); }}>
                       <Copy className="w-4 h-4 text-primary" />
                     </button>
                   </div>
-                </div>
-                <div>
-                  <label className="text-sm text-muted-foreground block mb-1">Amount</label>
-                  <Input value={`₹${selectedPlan.inrAmount}`} disabled className="bg-secondary border-border" />
-                </div>
-              </>
+                ) : (
+                  <p className="text-xs text-muted-foreground font-mono">No UPI configured</p>
+                )}
+              </div>
             )}
+
+            <div>
+              <label className="text-sm text-muted-foreground block mb-1">Amount</label>
+              <Input value={method === "usdt" ? selectedPlan.usdAmount : `₹${selectedPlan.inrAmount}`} disabled className="bg-secondary border-border" />
+            </div>
 
             <div className="flex items-center gap-2 p-3 rounded-lg bg-warning/10 border border-warning/20">
               <AlertTriangle className="w-5 h-5 text-warning flex-shrink-0" />
@@ -217,11 +206,7 @@ const WithdrawalDialog = ({ open, onClose, fundType, userId }: WithdrawalDialogP
 
             <div>
               <input type="file" ref={fileRef} onChange={handleUpload} accept="image/*" className="hidden" />
-              <Button
-                onClick={() => fileRef.current?.click()}
-                className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-                disabled={uploading}
-              >
+              <Button onClick={() => fileRef.current?.click()} className="w-full bg-primary text-primary-foreground hover:bg-primary/90" disabled={uploading}>
                 <Upload className="w-4 h-4 mr-2" />
                 {uploading ? "Uploading..." : "Submit Payment Screenshot"}
               </Button>

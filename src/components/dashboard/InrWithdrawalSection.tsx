@@ -6,9 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertTriangle, Upload, Copy, IndianRupee, Clock, CheckCircle2, XCircle } from "lucide-react";
 
-const UPI_ID = "tanyaayadav@ptyes";
-const USDT_ADDRESS = "TYud5LurN9hn16yy5K4gMiyLHpNJRa93C6";
-
 interface InrWithdrawalSectionProps {
   userId: string;
 }
@@ -20,8 +17,24 @@ const InrWithdrawalSection = ({ userId }: InrWithdrawalSectionProps) => {
   const [feeMethod, setFeeMethod] = useState<"usdt" | "inr" | null>(null);
   const [uploading, setUploading] = useState(false);
   const [withdrawals, setWithdrawals] = useState<any[]>([]);
+  const [siteSettings, setSiteSettings] = useState<Record<string, string>>({});
   const fileRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      const { data } = await (supabase.from as any)("site_settings").select("*");
+      const settings: Record<string, string> = {};
+      (data || []).forEach((s: any) => { settings[s.setting_key] = s.setting_value; });
+      setSiteSettings(settings);
+    };
+    fetchSettings();
+  }, []);
+
+  const usdtAddress = siteSettings.usdt_address || "";
+  const usdtQrUrl = siteSettings.usdt_qr_url || "";
+  const upiQrUrl = siteSettings.upi_qr_url || "";
+  const upiAddress = siteSettings.upi_address || "";
 
   const fetchData = () => {
     (supabase.from as any)("user_balances").select("inr_balance").eq("user_id", userId).single()
@@ -39,10 +52,6 @@ const InrWithdrawalSection = ({ userId }: InrWithdrawalSectionProps) => {
     setFeeDialog(true);
   };
 
-  const selectFeeMethod = (m: "usdt" | "inr") => {
-    setFeeMethod(m);
-  };
-
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -52,7 +61,6 @@ const InrWithdrawalSection = ({ userId }: InrWithdrawalSectionProps) => {
       const { error: uploadError } = await supabase.storage.from("screenshots").upload(fileName, file);
       if (uploadError) throw uploadError;
       const { data: urlData } = supabase.storage.from("screenshots").getPublicUrl(fileName);
-
       const { error } = await (supabase.from as any)("withdrawal_requests").insert({
         user_id: userId,
         withdrawal_type: "inr",
@@ -63,7 +71,6 @@ const InrWithdrawalSection = ({ userId }: InrWithdrawalSectionProps) => {
         fee_screenshot_url: urlData.publicUrl,
       });
       if (error) throw error;
-
       toast({ title: "Withdrawal request submitted!", description: "Your INR will be sent to your bank account after verification." });
       setFeeDialog(false);
       setFeeMethod(null);
@@ -86,7 +93,6 @@ const InrWithdrawalSection = ({ userId }: InrWithdrawalSectionProps) => {
           <p className="text-sm text-muted-foreground">Available INR Balance</p>
           <p className="text-3xl font-display font-bold text-primary">₹{balance.toLocaleString("en-IN")}</p>
         </div>
-
         <div className="space-y-4">
           <div>
             <label className="text-sm text-muted-foreground block mb-1">Amount to Withdraw (INR)</label>
@@ -98,9 +104,8 @@ const InrWithdrawalSection = ({ userId }: InrWithdrawalSectionProps) => {
         </div>
       </div>
 
-      {/* Fee Dialog */}
       <Dialog open={feeDialog} onOpenChange={(o) => { if (!o) { setFeeDialog(false); setFeeMethod(null); } }}>
-        <DialogContent className="bg-card border-border max-w-lg">
+        <DialogContent className="bg-card border-border max-w-lg mx-4">
           <DialogHeader>
             <DialogTitle className="text-foreground font-display">Submit ₹2,000 to Process Withdrawal</DialogTitle>
           </DialogHeader>
@@ -114,36 +119,52 @@ const InrWithdrawalSection = ({ userId }: InrWithdrawalSectionProps) => {
 
             {!feeMethod ? (
               <div className="grid grid-cols-2 gap-3">
-                <button onClick={() => selectFeeMethod("inr")} className="p-4 rounded-lg bg-secondary/50 border border-border/50 hover:border-primary/30 transition-all text-left hover:shadow-blue-glow">
+                <button onClick={() => setFeeMethod("inr")} className="p-4 rounded-lg bg-secondary/50 border border-border/50 hover:border-primary/30 transition-all text-left">
                   <p className="text-foreground font-semibold">INR (UPI)</p>
                   <p className="text-muted-foreground text-sm">Pay ₹2,000</p>
                 </button>
-                <button onClick={() => selectFeeMethod("usdt")} className="p-4 rounded-lg bg-secondary/50 border border-border/50 hover:border-primary/30 transition-all text-left hover:shadow-blue-glow">
+                <button onClick={() => setFeeMethod("usdt")} className="p-4 rounded-lg bg-secondary/50 border border-border/50 hover:border-primary/30 transition-all text-left">
                   <p className="text-foreground font-semibold">USDT (TRC20)</p>
                   <p className="text-muted-foreground text-sm">Pay $20</p>
                 </button>
               </div>
             ) : feeMethod === "inr" ? (
               <div className="bg-secondary/50 rounded-lg p-4 text-center">
-                <img src="/images/upi-qr.png" alt="UPI QR" className="w-40 h-40 mx-auto mb-3 rounded-lg" />
+                {upiQrUrl ? (
+                  <img src={upiQrUrl} alt="UPI QR" className="w-40 h-40 mx-auto mb-3 rounded-lg" />
+                ) : (
+                  <div className="w-40 h-40 mx-auto mb-3 rounded-lg bg-muted flex items-center justify-center text-muted-foreground text-sm font-mono">No QR Set</div>
+                )}
                 <p className="text-xs text-muted-foreground mb-2">UPI ID</p>
-                <div className="flex items-center justify-center gap-2">
-                  <code className="text-foreground font-mono">{UPI_ID}</code>
-                  <button onClick={() => { navigator.clipboard.writeText(UPI_ID); toast({ title: "Copied!" }); }}>
-                    <Copy className="w-4 h-4 text-primary" />
-                  </button>
-                </div>
+                {upiAddress ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <code className="text-foreground font-mono text-sm break-all">{upiAddress}</code>
+                    <button onClick={() => { navigator.clipboard.writeText(upiAddress); toast({ title: "Copied!" }); }}>
+                      <Copy className="w-4 h-4 text-primary" />
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground font-mono">No UPI configured</p>
+                )}
               </div>
             ) : (
               <div className="bg-secondary/50 rounded-lg p-4 text-center">
-                <img src="/images/usdt-qr.png" alt="USDT QR" className="w-40 h-40 mx-auto mb-3 rounded-lg" />
+                {usdtQrUrl ? (
+                  <img src={usdtQrUrl} alt="USDT QR" className="w-40 h-40 mx-auto mb-3 rounded-lg" />
+                ) : (
+                  <div className="w-40 h-40 mx-auto mb-3 rounded-lg bg-muted flex items-center justify-center text-muted-foreground text-sm font-mono">No QR Set</div>
+                )}
                 <p className="text-xs text-muted-foreground mb-2">USDT TRC20 Address</p>
-                <div className="flex items-center justify-center gap-2">
-                  <code className="text-xs text-foreground bg-background px-2 py-1 rounded break-all">{USDT_ADDRESS}</code>
-                  <button onClick={() => { navigator.clipboard.writeText(USDT_ADDRESS); toast({ title: "Copied!" }); }}>
-                    <Copy className="w-4 h-4 text-primary" />
-                  </button>
-                </div>
+                {usdtAddress ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <code className="text-xs text-foreground bg-background px-2 py-1 rounded break-all">{usdtAddress}</code>
+                    <button onClick={() => { navigator.clipboard.writeText(usdtAddress); toast({ title: "Copied!" }); }}>
+                      <Copy className="w-4 h-4 text-primary" />
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground font-mono">No address configured</p>
+                )}
               </div>
             )}
 
@@ -160,7 +181,6 @@ const InrWithdrawalSection = ({ userId }: InrWithdrawalSectionProps) => {
         </DialogContent>
       </Dialog>
 
-      {/* Withdrawal History */}
       {withdrawals.length > 0 && (
         <div className="glass-card p-6 shadow-card">
           <h3 className="text-lg font-display font-bold text-foreground mb-4">Withdrawal History</h3>
@@ -172,9 +192,9 @@ const InrWithdrawalSection = ({ userId }: InrWithdrawalSectionProps) => {
                   <p className="text-xs text-muted-foreground">{new Date(w.created_at).toLocaleString()}</p>
                 </div>
                 <span className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                  w.status === "confirmed" ? "bg-success/10 text-success" :
+                  w.status === "confirmed" ? "bg-primary/10 text-primary" :
                   w.status === "rejected" ? "bg-destructive/10 text-destructive" :
-                  "bg-warning/10 text-warning"
+                  "bg-accent/10 text-accent"
                 }`}>
                   {w.status === "confirmed" ? <CheckCircle2 className="w-3 h-3" /> :
                    w.status === "rejected" ? <XCircle className="w-3 h-3" /> :
