@@ -152,12 +152,21 @@ const AdminPanel = () => {
 
   const updateSetting = async (key: string, value: string) => {
     setSiteSettings(prev => ({ ...prev, [key]: value }));
-    const { error } = await (supabase.from as any)("site_settings").update({ setting_value: value, updated_at: new Date().toISOString() }).eq("setting_key", key);
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Setting saved!" });
+    // Try update first, then insert if not found
+    const { data, error: updateError } = await (supabase.from as any)("site_settings").update({ setting_value: value, updated_at: new Date().toISOString() }).eq("setting_key", key).select();
+    if (updateError) {
+      toast({ title: "Error", description: updateError.message, variant: "destructive" });
+      return;
     }
+    if (!data || data.length === 0) {
+      // Row doesn't exist, insert it
+      const { error: insertError } = await (supabase.from as any)("site_settings").insert({ setting_key: key, setting_value: value });
+      if (insertError) {
+        toast({ title: "Error", description: insertError.message, variant: "destructive" });
+        return;
+      }
+    }
+    toast({ title: "Setting saved!" });
   };
 
   const handleQrUpload = async (key: string, e: React.ChangeEvent<HTMLInputElement>) => {
